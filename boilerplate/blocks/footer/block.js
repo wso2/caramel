@@ -1,0 +1,4 @@
+Caramel.block("footer", {
+
+
+});

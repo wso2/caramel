@@ -1,0 +1,9 @@
+<%
+var Caramel = require("caramel").Caramel;
+
+(function () {
+    Caramel.render({
+        "name":"static"
+    });
+}());
+%>
