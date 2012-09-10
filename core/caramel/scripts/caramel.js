@@ -17,7 +17,7 @@ var Caramel = Caramel || ( function () {
 
     var data;
 
-    var md =  require("markdown").Markdown;
+    var md = require("markdown").Markdown;
 
     var converter = new md.Converter();
 
@@ -339,7 +339,7 @@ var Caramel = Caramel || ( function () {
                 values = tmpl.values;
                 length = keys.length;
                 for (i = 0; i < length; i++) {
-                    print(values[keys[i]]);
+                    return(values[keys[i]]);
                 }
             }
         }
@@ -510,6 +510,7 @@ var Caramel = Caramel || ( function () {
         if (init.postInitialize) {
             init.postInitialize(inputs, outputs);
         }
+
         print(Handle.compile(tmpl)(outputs));
     };
 
@@ -586,9 +587,43 @@ var Caramel = Caramel || ( function () {
         include(getThemeFile(path));
     };
 
-    Handle.registerHelper("includeBlocks", includeBlocks);
+    /**
+     * Handlebars helper functions
+     */
 
-    Handle.registerHelper("printData", printData);
+    // Handlebars helpers to print js
+    Handle.registerHelper("appContext", function () {
+        return site.context;
+    });
+
+
+    // Handlebars helpers to print js
+    Handle.registerHelper("printJS", function () {
+        var d = Caramel.data();
+        if (d.header.js) {
+            return new Handlebars.SafeString((Caramel.printData(d.header.js)));
+        }
+    });
+
+    // Handlebars helpers to print css
+    Handle.registerHelper("printCSS", function () {
+        var d = Caramel.data();
+        if (d.header.css) {
+            return new Handlebars.SafeString((Caramel.printData(d.header.css)));
+        }
+    });
+
+    // Handlebars helpers to print code
+    Handle.registerHelper("printCode", function (c) {
+        var d = Caramel.data();
+        if (d.header.code) {
+            return new Handlebars.SafeString((Caramel.printData(d.header.code)));
+        }
+    });
+
+    /**
+     * Helper functions END
+     */
 
     return {
         setUser:setUser,
@@ -622,5 +657,6 @@ var Caramel = Caramel || ( function () {
     };
 
 }());
+
 
 
