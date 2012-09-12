@@ -213,7 +213,7 @@ var Caramel = Caramel || ( function () {
             init.postInitialize(inputs, outputs);
         }
         //fn(inputs, outputs, Caramel);
-        print(Handle.compile(tmpl, outputs));
+        return new Handle.SafeString(Handle.compile(tmpl)(outputs));
     };
 
     var inheritParent = function (blok, name) {
@@ -515,7 +515,7 @@ var Caramel = Caramel || ( function () {
     };
 
     var includeBlock = function (name, inputs) {
-        renderBlock(name, inputs, null, true);
+        return renderBlock(name, inputs, null, true);
     };
 
     var includeBlocks = function (bloks) {
@@ -528,10 +528,10 @@ var Caramel = Caramel || ( function () {
             length = bloks.length;
             for (i = 0; i < length; i++) {
                 d = bloks[i];
-                renderBlock(d.name, d.inputs, d.outputs, false);
+                return renderBlock(d.name, d.inputs, d.outputs, false);
             }
         } else {
-            renderBlock(bloks.name, bloks.inputs, bloks.outputs, false);
+            return renderBlock(bloks.name, bloks.inputs, bloks.outputs, false);
         }
     };
 
@@ -591,7 +591,7 @@ var Caramel = Caramel || ( function () {
      * Handlebars helper functions
      */
 
-    // Handlebars helpers to print js
+        // Handlebars helpers to print js
     Handle.registerHelper("appContext", function () {
         return site.context;
     });
@@ -601,7 +601,7 @@ var Caramel = Caramel || ( function () {
     Handle.registerHelper("printJS", function () {
         var d = Caramel.data();
         if (d.header.js) {
-            return new Handlebars.SafeString((Caramel.printData(d.header.js)));
+            return new Handle.SafeString((Caramel.printData(d.header.js)));
         }
     });
 
@@ -609,7 +609,7 @@ var Caramel = Caramel || ( function () {
     Handle.registerHelper("printCSS", function () {
         var d = Caramel.data();
         if (d.header.css) {
-            return new Handlebars.SafeString((Caramel.printData(d.header.css)));
+            return new Handle.SafeString((Caramel.printData(d.header.css)));
         }
     });
 
@@ -617,9 +617,12 @@ var Caramel = Caramel || ( function () {
     Handle.registerHelper("printCode", function (c) {
         var d = Caramel.data();
         if (d.header.code) {
-            return new Handlebars.SafeString((Caramel.printData(d.header.code)));
+            return new Handle.SafeString((Caramel.printData(d.header.code)));
         }
     });
+
+    // Handlebars helper to includeBlocks
+    Handle.registerHelper("include", includeBlocks);
 
     /**
      * Helper functions END
@@ -657,6 +660,3 @@ var Caramel = Caramel || ( function () {
     };
 
 }());
-
-
-
