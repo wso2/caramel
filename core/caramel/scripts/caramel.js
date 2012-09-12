@@ -331,7 +331,7 @@ var Caramel = Caramel || ( function () {
     };
 
     var printData = function (tmpls) {
-        var key, tmpl, keys, values, i, length;
+        var key, tmpl, keys, values, i, length, print = "";
         for (key in tmpls) {
             if (tmpls.hasOwnProperty(key)) {
                 tmpl = tmpls[key];
@@ -339,8 +339,9 @@ var Caramel = Caramel || ( function () {
                 values = tmpl.values;
                 length = keys.length;
                 for (i = 0; i < length; i++) {
-                    return(values[keys[i]]);
+                    print += (values[keys[i]]) + "\n";
                 }
+		return print;
             }
         }
     };
@@ -546,7 +547,12 @@ var Caramel = Caramel || ( function () {
     };
 
     var addHeaderJS = function (template, key, js) {
-        js = '<script type="text/javascript" src="' + site.context + getThemeFile(js) + '"></script>';
+	if(js.indexOf("http://") < 0) {
+        	js = '<script type="text/javascript" src="' + site.context + getThemeFile(js) + '"></script>';
+	} else {
+		js = '<script type="text/javascript" src="' + js + '"></script>';
+	}
+
         insertData(this, template, "header", "js", key, js);
     };
 
