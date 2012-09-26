@@ -155,6 +155,10 @@ var Caramel = Caramel || ( function () {
         return "/modules/";
     };
 
+    var getSiteConf = function () {
+	return require("/conf/site.json");
+    };
+
     var getTheme = function () {
         //TODO : remove following lines if theme switching need to be avoided
         var site = require("/conf/site.json"), theme = request.getParameter("theme"), subtheme = request.getParameter("subtheme");
@@ -606,7 +610,7 @@ var Caramel = Caramel || ( function () {
     // Handlebars helpers to print js
     Handle.registerHelper("printJS", function () {
         var d = Caramel.data();
-        if (d.header.js) {
+        if (d.header && d.header.js) {
             return new Handle.SafeString((Caramel.printData(d.header.js)));
         }
     });
@@ -614,7 +618,7 @@ var Caramel = Caramel || ( function () {
     // Handlebars helpers to print css
     Handle.registerHelper("printCSS", function () {
         var d = Caramel.data();
-        if (d.header.css) {
+        if (d.header && d.header.css) {
             return new Handle.SafeString((Caramel.printData(d.header.css)));
         }
     });
@@ -622,7 +626,7 @@ var Caramel = Caramel || ( function () {
     // Handlebars helpers to print code
     Handle.registerHelper("printCode", function (c) {
         var d = Caramel.data();
-        if (d.header.code) {
+        if (d.header && d.header.code) {
             return new Handle.SafeString((Caramel.printData(d.header.code)));
         }
     });
@@ -662,7 +666,8 @@ var Caramel = Caramel || ( function () {
         addFooterJS:addFooterJS,
         addFooterJSCode:addFooterJSCode,
         addFooterCode:addFooterCode,
-        includeJag:includeJag
+        includeJag:includeJag,
+	getSiteConf:getSiteConf
     };
 
 }());
