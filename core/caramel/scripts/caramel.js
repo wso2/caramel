@@ -83,16 +83,18 @@ var Caramel = Caramel || ( function () {
         if (contentDir.isDirectory()) {
             var flist = contentDir.listFiles();
             for (var f in flist) {
-                if (flist[f].getName().split('.')[1] === 'md') {
-                    flist[f].open('r');
-                    inputJson[flist[f].getName().split('.')[0]] = converter.makeHtml(flist[f].readAll());
-                    flist[f].close();
+                if (flist.hasOwnProperty(f)) {
+                    if (flist[f].getName().split('.')[1] === 'md') {
+                        flist[f].open('r');
+                        inputJson[flist[f].getName().split('.')[0]] = converter.makeHtml(flist[f].readAll());
+                        flist[f].close();
+                    }
                 }
             }
         }
 
         return inputJson;
-    }
+    };
 
     /**
      *  When there is no block file associated, a default block is returned
@@ -125,7 +127,7 @@ var Caramel = Caramel || ( function () {
                 }
             });
         };
-    }
+    };
 
     var getInitializerFile = function (name) {
         return getThemeFile("templates/" + name + "/initializer.js");
@@ -156,7 +158,7 @@ var Caramel = Caramel || ( function () {
     };
 
     var getSiteConf = function () {
-	return require("/conf/site.json");
+	    return require("/conf/site.json");
     };
 
     var getTheme = function () {
@@ -345,9 +347,9 @@ var Caramel = Caramel || ( function () {
                 for (i = 0; i < length; i++) {
                     print += (values[keys[i]]) + "\n";
                 }
-		return print;
             }
         }
+        return print;
     };
 
     var getUrlMapping = function (path) {
@@ -551,12 +553,11 @@ var Caramel = Caramel || ( function () {
     };
 
     var addHeaderJS = function (template, key, js) {
-	if(js.indexOf("http://") < 0) {
-        	js = '<script type="text/javascript" src="' + site.context + getThemeFile(js) + '"></script>';
-	} else {
-		js = '<script type="text/javascript" src="' + js + '"></script>';
-	}
-
+        if(js.indexOf("http://") < 0) {
+                js = '<script type="text/javascript" src="' + site.context + getThemeFile(js) + '"></script>';
+        } else {
+            js = '<script type="text/javascript" src="' + js + '"></script>';
+        }
         insertData(this, template, "header", "js", key, js);
     };
 
@@ -667,7 +668,7 @@ var Caramel = Caramel || ( function () {
         addFooterJSCode:addFooterJSCode,
         addFooterCode:addFooterCode,
         includeJag:includeJag,
-	getSiteConf:getSiteConf
+	    getSiteConf:getSiteConf
     };
 
 }());
