@@ -43,7 +43,7 @@ caramel.engine('handlebars', (function () {
         }
         url = theme.url;
         for (i = 0; i < length; i++) {
-            html += renderJS(url.call(theme, '_/' + js[i]));
+            html += renderJS(url.call(theme, js[i]));
         }
         return new Handlebars.SafeString(html);
     });
@@ -63,7 +63,7 @@ caramel.engine('handlebars', (function () {
         }
         url = theme.url;
         for (i = 0; i < length; i++) {
-            html += renderCSS(url.call(theme, '_/' + css[i]));
+            html += renderCSS(url.call(theme, css[i]));
         }
         return new Handlebars.SafeString(html);
     });
