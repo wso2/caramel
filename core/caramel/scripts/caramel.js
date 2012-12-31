@@ -93,12 +93,14 @@ var caramel = caramel || (function () {
         },
 
         resolve: function (path) {
-            var fn, p = this.base() + '/' + path;
+            var fn, p;
+            path = (path.charAt(0) !== '/' ? '/' : '') + path;
+            p = this.base() + path;
             if (new File(p).isExists() || !(this.__proto__ instanceof Theme)) {
                 return p;
             }
             fn = this.__proto__.base;
-            return fn ? fn.call(this.__proto__) + '/' + path : p;
+            return fn ? fn.call(this.__proto__) + path : p;
         },
 
         url: function (path) {
@@ -232,7 +234,7 @@ var caramel = caramel || (function () {
      */
     url = function (path) {
         context = context || configs().context;
-        return context + path;
+        return context + (path.charAt(0) !== '/' ? '/' : '') + path;
     };
 
     return {

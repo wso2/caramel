@@ -1,5 +1,5 @@
 caramel.engine('handlebars', (function () {
-    var renderData, renderJS, renderCSS, partials, init, page, render, layout,
+    var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta,
         renderer, helper, helpers, pages, populate, rendererHelper, layoutHelper, serialize,
         rendererHelpers = {},
         layoutHelpers = {},
@@ -19,11 +19,12 @@ caramel.engine('handlebars', (function () {
         config = caramel.configs();
         cache = config.cache || (config.cache = {});
         theme = caramel.theme();
-        contexts.sort(function (c1, c2) {
-            return (c2.weight || 0) - (c1.weight || 0);
-        });
-        for (i = 0; i < length; i++) {
-            html += renderData(contexts[i], theme, cache);
+        if (contexts instanceof Array) {
+            for (i = 0; i < length; i++) {
+                html += renderData(contexts[i], theme, cache);
+            }
+        } else {
+            html = renderData(contexts, theme, cache);
         }
         return new Handlebars.SafeString(html);
     });
@@ -33,17 +34,18 @@ caramel.engine('handlebars', (function () {
      * {{js .}}
      */
     Handlebars.registerHelper('js', function (contexts) {
-        var i, url,
+        var i, url, html,
             theme = caramel.theme(),
             js = contexts._.js,
-            length = js.length,
-            html = '';
+            length = js.length;
+        html = meta(theme);
         if (length == 0) {
-            return html;
+            return new Handlebars.SafeString(html);
         }
         url = theme.url;
         for (i = 0; i < length; i++) {
-            html += renderJS(url.call(theme, js[i]));
+            //remove \n when production = true
+            html += '\n' + renderJS(url.call(theme, js[i]));
         }
         return new Handlebars.SafeString(html);
     });
@@ -73,7 +75,8 @@ caramel.engine('handlebars', (function () {
      * {{code .}}
      */
     Handlebars.registerHelper('code', function (contexts) {
-        var i,
+        var i, file, template,
+            theme = caramel.theme(),
             code = contexts._.code,
             length = code.length,
             html = '';
@@ -81,7 +84,12 @@ caramel.engine('handlebars', (function () {
             return html;
         }
         for (i = 0; i < length; i++) {
-            html += code[i];
+            file = new File(theme.resolve(code[i]));
+            file.open('r');
+            log.info(code[i]);
+            template = Handlebars.compile(file.readAll());
+            file.close();
+            html += template(contexts);
         }
         return new Handlebars.SafeString(html);
     });
@@ -91,7 +99,7 @@ caramel.engine('handlebars', (function () {
      * {{url "js/jquery-lates.js"}}
      */
     Handlebars.registerHelper('url', function (path) {
-        return caramel.theme().url(path);
+        return caramel.url(path);
     });
 
     /**
@@ -111,6 +119,14 @@ caramel.engine('handlebars', (function () {
         }
         return html;
     });
+
+    meta = function (theme) {
+        var code,
+            config = caramel.configs();
+        code = 'var caramel = caramel || {}; caramel.context = "' + config.context + '"; caramel.themer = "' + theme.name + '";';
+        code += "caramel.url = function (path) { return this.context + (path.charAt(0) !== '/' ? '/' : '') + path; };";
+        return renderJS(code, true);
+    };
 
     renderData = function (data, theme, cache) {
         var path, file, template, context = data.context;
@@ -142,8 +158,8 @@ caramel.engine('handlebars', (function () {
         }
     };
 
-    renderJS = function (js) {
-        return '<script type="application/javascript" src="' + js + '"></script>';
+    renderJS = function (js, inline) {
+        return '<script type="application/javascript"' + (inline ? '>' + js : ' src="' + js + '">') + '</script>';
     };
 
     renderCSS = function (css) {
@@ -180,7 +196,7 @@ caramel.engine('handlebars', (function () {
                     return;
                 }
                 file.open('r');
-                Handlebars.registerPartial(prefix, file.readAll());
+                Handlebars.registerPartial(prefix.substring(0, prefix.length - 4), file.readAll());
                 file.close();
             }
         })('', new File(theme.resolve(this.partials)));
@@ -213,7 +229,7 @@ caramel.engine('handlebars', (function () {
             config = caramel.configs(),
             cache = config.cache || (config.cache = {}),
             page = this.page(data, meta),
-            layout = (page.layout = {_: {}}),
+            layout = (page.layout = {}),
             areas = page.areas,
             length = areas.length;
         for (i = 0; i < length; i++) {
@@ -230,6 +246,9 @@ caramel.engine('handlebars', (function () {
         for (area in layout) {
             if (layout.hasOwnProperty(area)) {
                 items = layout[area];
+                items.sort(function (c1, c2) {
+                    return (c2.weight || 0) - (c1.weight || 0);
+                });
                 length = items.length;
                 for (i = 0; i < length; i++) {
                     item = items[i];
@@ -244,6 +263,7 @@ caramel.engine('handlebars', (function () {
                 }
             }
         }
+        layout._ = {};
         layout._.js = js;
         layout._.css = css;
         layout._.code = code;
@@ -299,18 +319,37 @@ caramel.engine('handlebars', (function () {
      * @return {Object}
      */
     renderer = function (data, area, meta) {
-        var name = data.name,
+        var path, template,
+            name = data.name,
+            js = [],
+            css = [],
+            code = [],
             fn = this.helper('renderer', name),
-            theme = caramel.theme(),
-            template = name + '.hbs';
+            theme = caramel.theme();
         if (fn) {
             return fn.call(this, data.context, area, meta);
         }
+        path = name + '.hbs';
+        if (new File(theme.resolve(path)).isExists()) {
+            template = path;
+        }
+        path = 'js/' + name + '.js';
+        if (new File(theme.resolve(path)).isExists()) {
+            js.push(path);
+        }
+        path = 'css/' + name + '.css';
+        if (new File(theme.resolve(path)).isExists()) {
+            css.push(path);
+        }
+        path = 'code/' + name + '.hbs';
+        if (new File(theme.resolve(path)).isExists()) {
+            code.push(path);
+        }
         return {
-            template: new File(theme.resolve(template)).isExists() ? template : null,
-            js: ['js/' + name + '.js'],
-            css: ['css/' + name + '.css'],
-            code: ['code/' + name + '.hbs']
+            template: template,
+            js: js,
+            css: css,
+            code: code
         };
     };
 
