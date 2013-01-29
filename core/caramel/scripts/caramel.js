@@ -28,7 +28,7 @@ var caramel = caramel || (function () {
         init: function (theme) {
 
         },
-        render: function () {
+        render: function (data) {
             print(data);
         },
         helper: function (type) {

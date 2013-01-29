@@ -86,7 +86,6 @@ caramel.engine('handlebars', (function () {
         for (i = 0; i < length; i++) {
             file = new File(theme.resolve(code[i]));
             file.open('r');
-            log.info(code[i]);
             template = Handlebars.compile(file.readAll());
             file.close();
             html += template(contexts);
