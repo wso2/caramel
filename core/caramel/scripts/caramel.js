@@ -1,26 +1,35 @@
 var caramel = caramel || (function () {
-    var init, cache, Theme, theme, Engine, engine, meta, render, configs, context, url, negotiate, send, sendJSON, build, helper,
+    var load, cache, Theme, theme, Engine, engine, meta, render,
+        configs, context, url, negotiate, send, sendJSON, build, helper, parseRequest,
+        log = new Log(),
         themes = {},
         engines = {};
 
     /**
-     * Initializes the specified theme.
+     * Loads the specified theme.
      * @param theme
      */
-    init = function (theme) {
+    load = function (theme) {
         require((configs().themes || '/themes') + '/' + theme + '/theme.js');
+        if (log.isDebugEnabled()) {
+            log.debug('Loaded theme : ' + theme);
+        }
     };
 
     /**
      * Constructor of the Engine class.
      * @constructor
      */
-    Engine = function (options) {
+    Engine = function (name, options) {
         var option;
+        this.name = name;
         for (option in options) {
             if (options.hasOwnProperty(option)) {
                 this[option] = options[option];
             }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug('Created new engine : ' + stringify(options));
         }
     };
 
@@ -51,14 +60,22 @@ var caramel = caramel || (function () {
         if (!options) {
             return engines[engine];
         }
-        e = new Engine(options);
+
         if (engine instanceof Engine) {
+            e = new Engine('extended > ' + engine.name, options);
             e.__proto__ = engine;
+            if (log.isDebugEnabled()) {
+                log.debug('Extended theme engine : ' + engine.name);
+            }
         } else {
+            e = new Engine(engine, options);
             if (engines[engine]) {
                 e.__proto__ = engines[engine];
             } else {
                 engines[engine] = e;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug('Registered theme engine : ' + e.name);
             }
         }
         return e;
@@ -83,6 +100,9 @@ var caramel = caramel || (function () {
                 this[option] = options[option];
             }
         }
+        if (log.isDebugEnabled()) {
+            log.debug('Created new theme : ' + name);
+        }
     };
 
     Theme.prototype = {
@@ -94,13 +114,23 @@ var caramel = caramel || (function () {
 
         resolve: function (path) {
             var fn, p;
+            if (log.isDebugEnabled()) {
+                log.debug('Resolving path : ' + path);
+            }
             path = (path.charAt(0) !== '/' ? '/' : '') + path;
             p = this.base() + path;
             if (new File(p).isExists() || !(this.__proto__ instanceof Theme)) {
+                if (log.isDebugEnabled()) {
+                    log.debug('Resolved path : ' + p);
+                }
                 return p;
             }
             fn = this.__proto__.base;
-            return fn ? fn.call(this.__proto__) + path : p;
+            p = fn ? fn.call(this.__proto__) + path : p;
+            if (log.isDebugEnabled()) {
+                log.debug('Inherited path : ' + p);
+            }
+            return p;
         },
 
         url: function (path) {
@@ -132,9 +162,12 @@ var caramel = caramel || (function () {
             if (theme.engine.init) {
                 theme.engine.init(theme);
             }
+            if (log.isDebugEnabled()) {
+                log.debug('Registered new theme : ' + name);
+            }
             return theme;
         }
-        init(name);
+        load(name);
         return themes[name];
     };
 
@@ -146,6 +179,9 @@ var caramel = caramel || (function () {
     configs = function (configs) {
         if (configs) {
             application.put('caramel', configs);
+            if (log.isDebugEnabled()) {
+                log.debug('Updated configs : ' + stringify(configs));
+            }
         } else {
             configs = application.get('caramel');
         }
@@ -167,6 +203,11 @@ var caramel = caramel || (function () {
                 application: application
             };
         caramel.meta(meta);
+        if (log.isDebugEnabled()) {
+            data = build(data);
+            log.debug('Rendering request : ' + stringify(parseRequest(meta.request)));
+            log.debug('Rendering data : ' + stringify(data));
+        }
         if (!negotiation) {
             send(data, meta);
             return;
@@ -190,6 +231,9 @@ var caramel = caramel || (function () {
             return;
         }
         accept = accept.toLowerCase();
+        if (log.isDebugEnabled()) {
+            log.debug('Negotiating data : ' + accept);
+        }
         if (accept.indexOf('application/json') != -1) {
             sendJSON(data, meta);
             return;
@@ -235,6 +279,17 @@ var caramel = caramel || (function () {
     url = function (path) {
         context = context || configs().context;
         return context + (path.charAt(0) !== '/' ? '/' : '') + path;
+    };
+
+    parseRequest = function (req) {
+        return {
+            method: req.getMethod(),
+            url: req.getRequestURI(),
+            query: req.getQueryString(),
+            content: req.getContent(),
+            headers: req.getAllHeaders(),
+            parameters: req.getAllParameters()
+        };
     };
 
     return {

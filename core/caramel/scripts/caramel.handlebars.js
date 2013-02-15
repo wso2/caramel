@@ -1,6 +1,7 @@
 caramel.engine('handlebars', (function () {
     var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta,
         renderer, helper, helpers, pages, populate, rendererHelper, layoutHelper, serialize,
+        log = new Log(),
         rendererHelpers = {},
         layoutHelpers = {},
         Handlebars = require('handlebars').Handlebars;
@@ -13,6 +14,9 @@ caramel.engine('handlebars', (function () {
         var i, config, cache, theme,
             length = contexts ? contexts.length : 0,
             html = '';
+        if (log.isDebugEnabled()) {
+            log.debug('Including : ' + stringify(contexts));
+        }
         if (length == 0) {
             return html;
         }
@@ -27,6 +31,19 @@ caramel.engine('handlebars', (function () {
             html = renderData(contexts, theme, cache);
         }
         return new Handlebars.SafeString(html);
+    });
+
+    /**
+     * {{#itr context}}key : {{key}} value : {{value}}{{/itr}}
+     */
+    Handlebars.registerHelper("itr", function (obj, options) {
+        var key, buffer = '';
+        for (key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                buffer += options.fn({key: key, value: obj[key]});
+            }
+        }
+        return buffer;
     });
 
     /**
@@ -102,6 +119,16 @@ caramel.engine('handlebars', (function () {
     });
 
     /**
+     * Registers  'cap' handler for resolving theme files.
+     * {{url "js/jquery-lates.js"}}
+     */
+    Handlebars.registerHelper('cap', function (str) {
+        return str.replace(/[^\s]+/g, function (str) {
+            return str.substr(0, 1).toUpperCase() + str.substr(1).toLowerCase();
+        });
+    });
+
+    /**
      * {{#slice start="1" end="10" count="2" size="2"}}{{name}}{{/slice}}
      */
     Handlebars.registerHelper('slice', function (context, block) {
@@ -130,6 +157,9 @@ caramel.engine('handlebars', (function () {
     renderData = function (data, theme, cache) {
         var path, file, template, context = data.context;
         if (data.template) {
+            if (log.isDebugEnabled()) {
+                log.debug('Rendering template : ' + data.template);
+            }
             path = theme.resolve(data.template);
             if (theme.cache) {
                 template = cache[path];
@@ -139,8 +169,14 @@ caramel.engine('handlebars', (function () {
                 file.open('r');
                 template = (cache[path] = Handlebars.compile(file.readAll()));
                 file.close();
+                if (log.isDebugEnabled()) {
+                    log.debug('Loaded template : ' + data.template);
+                }
             }
         } else {
+            if (log.isDebugEnabled()) {
+                log.debug('No template, serializing data');
+            }
             template = serialize;
         }
         return template(typeof context === 'function' ? context() : context);
@@ -180,6 +216,9 @@ caramel.engine('handlebars', (function () {
      * @param theme
      */
     init = function (theme) {
+        if (log.isDebugEnabled()) {
+            log.debug('Initializing engine handlebars with theme : ' + theme.name);
+        }
         (function partials(prefix, file) {
             var i, length, name, files;
             if (file.isDirectory()) {
@@ -266,7 +305,13 @@ caramel.engine('handlebars', (function () {
         layout._.js = js;
         layout._.css = css;
         layout._.code = code;
+        if (log.isDebugEnabled()) {
+            log.debug('Layout generated : ' + stringify(layout));
+        }
         path = caramel.theme().resolve(this.pages + '/' + page.template);
+        if (log.isDebugEnabled()) {
+            log.debug('Rendering page : ' + path);
+        }
         if (this.cache) {
             template = cache[path];
         }
@@ -318,7 +363,7 @@ caramel.engine('handlebars', (function () {
      * @return {Object}
      */
     renderer = function (data, area, meta) {
-        var path, template,
+        var path, template, ren,
             name = data.name,
             js = [],
             css = [],
@@ -344,12 +389,16 @@ caramel.engine('handlebars', (function () {
         if (new File(theme.resolve(path)).isExists()) {
             code.push(path);
         }
-        return {
+        ren = {
             template: template,
             js: js,
             css: css,
             code: code
         };
+        if (log.isDebugEnabled()) {
+            log.debug('Default renderer : ' + stringify(ren));
+        }
+        return ren;
     };
 
     helper = function (type) {
