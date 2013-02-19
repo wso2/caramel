@@ -158,7 +158,7 @@ caramel.engine('handlebars', (function () {
         var path, file, template, context = data.context;
         if (data.template) {
             if (log.isDebugEnabled()) {
-                log.debug('Rendering template : ' + data.template);
+                log.debug('Rendering template "' + data.name + '" : ' + data.template);
             }
             path = theme.resolve(data.template);
             if (theme.cache) {
@@ -170,12 +170,12 @@ caramel.engine('handlebars', (function () {
                 template = (cache[path] = Handlebars.compile(file.readAll()));
                 file.close();
                 if (log.isDebugEnabled()) {
-                    log.debug('Loaded template : ' + data.template);
+                    log.debug('Loaded template - "' + data.name + '" : ' + data.template);
                 }
             }
         } else {
             if (log.isDebugEnabled()) {
-                log.debug('No template, serializing data');
+                log.debug('No template, serializing data - "' + data.name + '"');
             }
             template = serialize;
         }
@@ -371,7 +371,11 @@ caramel.engine('handlebars', (function () {
             fn = this.helper('renderer', name),
             theme = caramel.theme();
         if (fn) {
-            return fn.call(this, data.context, area, meta);
+            ren = fn.call(this, data.context, area, meta);
+            if (log.isDebugEnabled()) {
+                log.debug('Overridden renderer - "' + name + '" : ' + stringify(ren));
+            }
+            return ren;
         }
         path = name + '.hbs';
         if (new File(theme.resolve(path)).isExists()) {
@@ -396,7 +400,7 @@ caramel.engine('handlebars', (function () {
             code: code
         };
         if (log.isDebugEnabled()) {
-            log.debug('Default renderer : ' + stringify(ren));
+            log.debug('Default renderer - "' + name + '" : ' + stringify(ren));
         }
         return ren;
     };
