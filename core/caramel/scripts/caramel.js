@@ -1,19 +1,33 @@
 var caramel = caramel || (function () {
     var load, cache, Theme, theme, Engine, engine, meta, render,
-        configs, context, url, negotiate, send, sendJSON, build, helper, parseRequest,
+        configs, context, url, negotiate, send, sendJSON, build, parseRequest,
         log = new Log(),
         themes = {},
         engines = {};
 
     /**
      * Loads the specified theme.
-     * @param theme
+     * @param name
      */
-    load = function (theme) {
-        require((configs().themes || '/themes') + '/' + theme + '/theme.js');
-        if (log.isDebugEnabled()) {
-            log.debug('Loaded theme : ' + theme);
+    load = function (name) {
+        var option,
+            options = require((configs().themes || '/themes') + '/' + name + '/theme.js');
+        name = (themes[name] = new Theme(name, options));
+        for (option in options) {
+            if (options.hasOwnProperty(option)) {
+                name[option] = options[option];
+            }
         }
+        if (name.engine.init) {
+            name.engine.init(name);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug('Registered new theme : ' + name);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug('Loaded theme : ' + name);
+        }
+        return name;
     };
 
     /**
@@ -39,9 +53,6 @@ var caramel = caramel || (function () {
         },
         render: function (data) {
             print(data);
-        },
-        helper: function (type) {
-
         }
     };
 
@@ -145,26 +156,11 @@ var caramel = caramel || (function () {
      * @param options
      * @return {Theme}
      */
-    theme = function (name, options) {
-        var theme, option;
+    theme = function (name) {
+        var theme;
         name = name || configs().themer();
         theme = themes[name];
         if (theme) {
-            return theme;
-        }
-        if (options) {
-            theme = (themes[name] = new Theme(name, options));
-            for (option in options) {
-                if (options.hasOwnProperty(option)) {
-                    theme[option] = options[option];
-                }
-            }
-            if (theme.engine.init) {
-                theme.engine.init(theme);
-            }
-            if (log.isDebugEnabled()) {
-                log.debug('Registered new theme : ' + name);
-            }
             return theme;
         }
         load(name);
@@ -217,11 +213,6 @@ var caramel = caramel || (function () {
 
     cache = function () {
         return caramel.configs().cache;
-    };
-
-    helper = function () {
-        var engine = caramel.theme().engine;
-        return engine.helper.apply(engine, Array.prototype.slice.call(arguments));
     };
 
     negotiate = function (data, meta) {
@@ -298,7 +289,6 @@ var caramel = caramel || (function () {
         theme: theme,
         engine: engine,
         render: render,
-        helper: helper,
         configs: configs,
         url: url
     };

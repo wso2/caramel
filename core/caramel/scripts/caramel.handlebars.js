@@ -1,9 +1,7 @@
 caramel.engine('handlebars', (function () {
     var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta,
-        renderer, helper, helpers, pages, populate, rendererHelper, layoutHelper, serialize,
+        renderer, helper, helpers, pages, populate, serialize,
         log = new Log(),
-        rendererHelpers = {},
-        layoutHelpers = {},
         Handlebars = require('handlebars').Handlebars;
 
     /**
@@ -211,6 +209,12 @@ caramel.engine('handlebars', (function () {
 
     helpers = 'helpers';
 
+    helper = function (name) {
+        var theme = caramel.theme(),
+            path = theme.resolve(helpers + '/' + name + '.js');
+        return new File(path).isExists() ? require(path) : null;
+    };
+
     /**
      * Init function of handlebars engine. This can be overridden by new themes.
      * @param theme
@@ -332,22 +336,12 @@ caramel.engine('handlebars', (function () {
      * @return {Function}
      */
     layout = function (data, layout, meta) {
-        var path, fn, theme, page,
-            name = data.name;
-        fn = this.helper('layout', name);
-        if (fn) {
-            fn.call(this, data, layout, meta);
+        var page,
+            name = data.name,
+            hp = helper(name);
+        if (hp && hp.layout) {
+            hp.layout.call(this, data, layout, meta);
             return;
-        }
-        theme = caramel.theme();
-        path = theme.resolve(this.helpers + '/' + name + '.js');
-        if (new File(path).isExists()) {
-            require(path);
-            fn = this.helper('layout', name);
-            if (fn) {
-                fn.call(this, data, layout, meta);
-                return;
-            }
         }
         page = meta.page;
         if (page.areaDefault) {
@@ -368,10 +362,10 @@ caramel.engine('handlebars', (function () {
             js = [],
             css = [],
             code = [],
-            fn = this.helper('renderer', name),
+            hp = helper(name),
             theme = caramel.theme();
-        if (fn) {
-            ren = fn.call(this, data.context, area, meta);
+        if (hp && hp.renderer) {
+            ren = hp.renderer.call(this, data.context, area, meta);
             if (log.isDebugEnabled()) {
                 log.debug('Overridden renderer - "' + name + '" : ' + stringify(ren));
             }
@@ -405,26 +399,6 @@ caramel.engine('handlebars', (function () {
         return ren;
     };
 
-    helper = function (type) {
-        var args = Array.prototype.slice.call(arguments).slice(1);
-        switch (type) {
-            case 'renderer':
-                return rendererHelper.apply(this, args);
-            case 'layout':
-                return layoutHelper.apply(this, args);
-            default:
-                return null;
-        }
-    };
-
-    rendererHelper = function (name, fn) {
-        return fn ? (rendererHelpers[name] = fn) : rendererHelpers[name];
-    };
-
-    layoutHelper = function (name, fn) {
-        return fn ? (layoutHelpers[name] = fn) : layoutHelpers[name];
-    };
-
     populate = function (dir, ext, theme) {
         var i, n,
             a = [],
@@ -444,12 +418,10 @@ caramel.engine('handlebars', (function () {
     return {
         partials: partials,
         pages: pages,
-        helpers: helpers,
         init: init,
         page: page,
         render: render,
         layout: layout,
-        renderer: renderer,
-        helper: helper
+        renderer: renderer
     };
 })());
