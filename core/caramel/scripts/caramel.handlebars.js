@@ -132,6 +132,9 @@ caramel.engine('handlebars', (function () {
      * {{url "js/jquery-lates.js"}}
      */
     Handlebars.registerHelper('url', function (path) {
+        if(path.indexOf('http://') === 0 || path.indexOf('https://') === 0) {
+            return path;
+        }
         return caramel.url(path);
     });
 
