@@ -45,6 +45,25 @@ caramel.engine('handlebars', (function () {
     });
 
     /**
+     * {{#func myFunction}}{{/func}}
+     */
+    Handlebars.registerHelper("func", function (obj, options) {
+        return options.fn(obj());
+    });
+
+    /**
+     * {{#data "asset"}}{{/data}}
+     * {{#data}}{{/data}}
+     */
+    Handlebars.registerHelper("data", function (obj, options) {
+        var fn,
+            data = caramel.meta().data;
+        data = options ? data[obj] : data;
+        fn = options ? options.fn : obj.fn;
+        return fn(data);
+    });
+
+    /**
      * Registers  'js' handler for JavaScript inclusion within handlebars templates.
      * {{js .}}
      */
@@ -278,7 +297,7 @@ caramel.engine('handlebars', (function () {
             layout[areas[i]] = [];
         }
         for (name in data) {
-            if (data.hasOwnProperty(name)) {
+            if (data.hasOwnProperty(name) && name !== '_') {
                 this.layout({
                     name: name,
                     context: data[name]
@@ -333,7 +352,6 @@ caramel.engine('handlebars', (function () {
      * @param data
      * @param layout
      * @param meta
-     * @return {Function}
      */
     layout = function (data, layout, meta) {
         var page,
