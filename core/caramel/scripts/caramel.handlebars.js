@@ -132,7 +132,7 @@ caramel.engine('handlebars', (function () {
      * {{url "js/jquery-lates.js"}}
      */
     Handlebars.registerHelper('url', function (path) {
-        if(path.indexOf('http://') === 0 || path.indexOf('https://') === 0) {
+        if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) {
             return path;
         }
         return caramel.url(path);
@@ -286,7 +286,7 @@ caramel.engine('handlebars', (function () {
      * @param meta
      */
     render = function (data, meta) {
-        var file, template, path, i, area, items, item, name,
+        var file, template, path, i, area, items, item, name, hp, d,
             js = [],
             css = [],
             code = [],
@@ -301,10 +301,16 @@ caramel.engine('handlebars', (function () {
         }
         for (name in data) {
             if (data.hasOwnProperty(name) && name !== '_') {
-                this.layout({
+                hp = helper(name);
+                d = {
                     name: name,
                     context: data[name]
-                }, layout, meta);
+                };
+                if (hp && hp.layout) {
+                    hp.layout.call(this, d, layout, meta);
+                    continue;
+                }
+                this.layout(d, layout, meta);
             }
         }
         for (area in layout) {
@@ -316,7 +322,16 @@ caramel.engine('handlebars', (function () {
                 length = items.length;
                 for (i = 0; i < length; i++) {
                     item = items[i];
-                    renderer = this.renderer(item, page, area, meta);
+                    //call any overridden renderer
+                    hp = helper(item.name);
+                    if (hp && hp.renderer) {
+                        renderer = hp.renderer.call(this, item, area, meta);
+                        if (log.isDebugEnabled()) {
+                            log.debug('Overridden renderer - "' + item.name + '" : ' + stringify(renderer));
+                        }
+                    } else {
+                        renderer = this.renderer(item, page, area, meta);
+                    }
                     if (!renderer) {
                         continue;
                     }
@@ -357,14 +372,7 @@ caramel.engine('handlebars', (function () {
      * @param meta
      */
     layout = function (data, layout, meta) {
-        var page,
-            name = data.name,
-            hp = helper(name);
-        if (hp && hp.layout) {
-            hp.layout.call(this, data, layout, meta);
-            return;
-        }
-        page = meta.page;
+        var page = meta.page;
         if (page.areaDefault) {
             layout[page.areaDefault].push(data);
         }
@@ -383,15 +391,7 @@ caramel.engine('handlebars', (function () {
             js = [],
             css = [],
             code = [],
-            hp = helper(name),
             theme = caramel.theme();
-        if (hp && hp.renderer) {
-            ren = hp.renderer.call(this, data.context, area, meta);
-            if (log.isDebugEnabled()) {
-                log.debug('Overridden renderer - "' + name + '" : ' + stringify(ren));
-            }
-            return ren;
-        }
         path = name + '.hbs';
         if (new File(theme.resolve(path)).isExists()) {
             template = path;
