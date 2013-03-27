@@ -1,5 +1,5 @@
 caramel.engine('handlebars', (function () {
-    var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta,
+    var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta, format, formatters,
         renderer, helper, helpers, pages, populate, serialize,
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
@@ -296,6 +296,7 @@ caramel.engine('handlebars', (function () {
             layout = (page.layout = {}),
             areas = page.areas,
             length = areas.length;
+        data = this.format(data, meta);
         for (i = 0; i < length; i++) {
             layout[areas[i]] = [];
         }
@@ -420,6 +421,26 @@ caramel.engine('handlebars', (function () {
         return ren;
     };
 
+    formatters = 'formatters';
+
+    format = function (data, meta) {
+        var fn,
+            theme = caramel.theme(),
+            path = meta.request.getMappedPath() || meta.request.getRequestURI();
+        path = theme.resolve(formatters + path.substring(0, path.length - 4) + '.js');
+        if (log.isDebugEnabled()) {
+            log.info('Formatting data for the request using : ' + path);
+        }
+        if (new File(path).isExists()) {
+            fn = require(path).format;
+            data = fn ? fn(data, meta) : data;
+        }
+        if (log.isDebugEnabled()) {
+            log.info('Formatted data : ' + stringify(data));
+        }
+        return data;
+    };
+
     populate = function (dir, ext, theme) {
         var i, n,
             a = [],
@@ -442,6 +463,7 @@ caramel.engine('handlebars', (function () {
         init: init,
         page: page,
         render: render,
+        format: format,
         layout: layout,
         renderer: renderer
     };
