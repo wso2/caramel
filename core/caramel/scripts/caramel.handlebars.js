@@ -1,6 +1,6 @@
 caramel.engine('handlebars', (function () {
     var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta, format, formattersDir, partialsDir,
-        renderer, helper, helpersDir, pagesDir, populate, serialize,
+        renderer, helper, helpersDir, pagesDir, populate, serialize, globals,
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
 
@@ -167,10 +167,13 @@ caramel.engine('handlebars', (function () {
     });
 
     meta = function (theme) {
-        var code,
+        var code, g,
+            meta = caramel.meta(),
             config = caramel.configs();
         code = 'var caramel = caramel || {}; caramel.context = "' + config.context + '"; caramel.themer = "' + theme.name + '";';
         code += "caramel.url = function (path) { return this.context + (path.charAt(0) !== '/' ? '/' : '') + path; };";
+        g = theme.engine.globals(meta.data, meta);
+        code += g || '';
         return renderJS(code, true);
     };
 
@@ -442,6 +445,10 @@ caramel.engine('handlebars', (function () {
         return data;
     };
 
+    globals = function (data, meta) {
+        return null;
+    };
+
     populate = function (dir, ext, theme) {
         var i, n,
             a = [],
@@ -460,6 +467,7 @@ caramel.engine('handlebars', (function () {
 
     return {
         partials: partials,
+        globals: globals,
         init: init,
         page: page,
         render: render,
