@@ -1,8 +1,3 @@
-//TODO : remove this when log configs are implemented
-Log.prototype.isDebugEnabled = function () {
-    return false;
-};
-
 var Caramel = Caramel || ( function () {
 
     var modules = {};

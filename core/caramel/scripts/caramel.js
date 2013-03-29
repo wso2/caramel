@@ -153,7 +153,6 @@ var caramel = caramel || (function () {
     /**
      * The method to create/retrieve a theme
      * @param name
-     * @param options
      * @return {Theme}
      */
     theme = function (name) {
