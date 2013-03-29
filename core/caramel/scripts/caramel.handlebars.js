@@ -1,6 +1,6 @@
 caramel.engine('handlebars', (function () {
-    var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta, format, formatters,
-        renderer, helper, helpers, pages, populate, serialize,
+    var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta, format, formattersDir, partialsDir,
+        renderer, helper, helpersDir, pagesDir, populate, serialize,
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
 
@@ -221,38 +221,28 @@ caramel.engine('handlebars', (function () {
         return '<link rel="stylesheet" type="text/css" href="' + css + '"/>';
     };
 
-    /**
-     * Directory for the partial lookup.
-     * @type {String}
-     */
-    partials = 'partials';
+    pagesDir = 'pages';
 
-    pages = 'pages';
+    helpersDir = 'helpers';
 
-    helpers = 'helpers';
+    partialsDir = 'partials';
 
     helper = function (name) {
         var theme = caramel.theme(),
-            path = theme.resolve(helpers + '/' + name + '.js');
+            path = theme.resolve(helpersDir + '/' + name + '.js');
         return new File(path).isExists() ? require(path) : null;
     };
 
-    /**
-     * Init function of handlebars engine. This can be overridden by new themes.
-     * @param theme
-     */
-    init = function (theme) {
-        if (log.isDebugEnabled()) {
-            log.debug('Initializing engine handlebars with theme : ' + theme.name);
-        }
-        (function partials(prefix, file) {
+    partials = function (Handlebars) {
+        var theme = caramel.theme();
+        (function register(prefix, file) {
             var i, length, name, files;
             if (file.isDirectory()) {
                 files = file.listFiles();
                 length = files.length;
                 for (i = 0; i < length; i++) {
                     file = files[i];
-                    partials(prefix ? prefix + '.' + file.getName() : file.getName(), file);
+                    register(prefix ? prefix + '.' + file.getName() : file.getName(), file);
                 }
             } else {
                 name = file.getName();
@@ -263,7 +253,18 @@ caramel.engine('handlebars', (function () {
                 Handlebars.registerPartial(prefix.substring(0, prefix.length - 4), file.readAll());
                 file.close();
             }
-        })('', new File(theme.resolve(this.partials)));
+        })('', new File(theme.resolve(partialsDir)));
+    };
+
+    /**
+     * Init function of handlebars engine. This can be overridden by new themes.
+     * @param theme
+     */
+    init = function (theme) {
+        if (log.isDebugEnabled()) {
+            log.debug('Initializing engine handlebars with theme : ' + theme.name);
+        }
+        this.partials(Handlebars);
     };
 
     /**
@@ -350,7 +351,7 @@ caramel.engine('handlebars', (function () {
         if (log.isDebugEnabled()) {
             log.debug('Layout generated : ' + stringify(layout));
         }
-        path = caramel.theme().resolve(this.pages + '/' + page.template);
+        path = caramel.theme().resolve(pagesDir + '/' + page.template);
         if (log.isDebugEnabled()) {
             log.debug('Rendering page : ' + path);
         }
@@ -421,13 +422,13 @@ caramel.engine('handlebars', (function () {
         return ren;
     };
 
-    formatters = 'formatters';
+    formattersDir = 'formatters';
 
     format = function (data, meta) {
         var fn,
             theme = caramel.theme(),
             path = meta.request.getMappedPath() || meta.request.getRequestURI();
-        path = theme.resolve(formatters + path.substring(0, path.length - 4) + '.js');
+        path = theme.resolve(formattersDir + path.substring(0, path.length - 4) + '.js');
         if (log.isDebugEnabled()) {
             log.info('Formatting data for the request using : ' + path);
         }
@@ -459,7 +460,6 @@ caramel.engine('handlebars', (function () {
 
     return {
         partials: partials,
-        pages: pages,
         init: init,
         page: page,
         render: render,
