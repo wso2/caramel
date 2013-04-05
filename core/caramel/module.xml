@@ -5,7 +5,7 @@
     </script>
     <script>
         <name>caramel</name>
-        <path>scripts/caramel.js</path>
+        <path>scripts/caramel-core.js</path>
     </script>
     <script>
         <name>caramel.handlebars</name>
