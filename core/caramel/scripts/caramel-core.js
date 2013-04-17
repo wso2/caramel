@@ -1,5 +1,5 @@
 var caramel = caramel || (function () {
-    var load, cache, Theme, theme, Engine, engine, meta, render,
+    var load, Theme, theme, Engine, engine, meta, render,
         configs, context, url, negotiate, send, sendJSON, build, parseRequest,
         log = new Log(),
         themes = {},
@@ -210,10 +210,6 @@ var caramel = caramel || (function () {
         negotiate(data, meta);
     };
 
-    cache = function () {
-        return caramel.configs().cache;
-    };
-
     negotiate = function (data, meta) {
         var req = meta.request, accept = req.getHeader('Accept');
         if (!accept) {
@@ -284,11 +280,11 @@ var caramel = caramel || (function () {
 
     return {
         meta: meta,
-        cache: cache,
         theme: theme,
         engine: engine,
         render: render,
         configs: configs,
-        url: url
+        url: url,
+        build: build
     };
 })();
