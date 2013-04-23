@@ -1,6 +1,6 @@
 caramel.engine('handlebars', (function () {
-    var renderData, renderJS, renderCSS, partials, init, page, render, layout, meta, layoutsDir, partialsDir,
-        renderer, helper, helpersDir, pagesDir, populate, serialize, globals, cache, codesDir,
+    var renderData, partials, init, page, render, meta, partialsDir, renderJS, renderCSS,
+        pagesDir, populate, serialize, globals, theme, renderersDir, helpersDir,
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
 
@@ -9,7 +9,7 @@ caramel.engine('handlebars', (function () {
      * {{include body}}
      */
     Handlebars.registerHelper('include', function (contexts) {
-        var i, cache,
+        var i, type,
             length = contexts ? contexts.length : 0,
             html = '';
         if (log.isDebugEnabled()) {
@@ -18,13 +18,17 @@ caramel.engine('handlebars', (function () {
         if (length == 0) {
             return html;
         }
-        cache = caramel.configs().cache;
+        type = typeof contexts;
         if (contexts instanceof Array) {
             for (i = 0; i < length; i++) {
-                html += renderData(contexts[i], cache);
+                html += renderData(contexts[i]);
             }
+        } else if (contexts instanceof String || type === 'string' ||
+            contexts instanceof Number || type === 'number' ||
+            contexts instanceof Boolean || type === 'boolean') {
+            html = contexts.toString();
         } else {
-            html = renderData(contexts, cache);
+            html = renderData(contexts);
         }
         return new Handlebars.SafeString(html);
     });
@@ -45,39 +49,39 @@ caramel.engine('handlebars', (function () {
     /**
      * {{#func myFunction}}{{/func}}
      */
-    Handlebars.registerHelper("func", function (obj, options) {
-        return options.fn(obj());
+    Handlebars.registerHelper("func", function (context, block) {
+        var param,
+            args = [],
+            params = block.hash;
+        for (param in params) {
+            if (params.hasOwnProperty(param)) {
+                args.push(params[param]);
+            }
+        }
+        return block(context.apply(null, args));
     });
-
-    /**
-     * {{#data "asset"}}{{/data}}
-     * {{#data}}{{/data}}
-     */
-    /*Handlebars.registerHelper("data", function (obj, options) {
-     var fn,
-     data = caramel.meta().data;
-     data = options ? data[obj] : data;
-     fn = options ? options.fn : obj.fn;
-     return fn(data);
-     });*/
 
     /**
      * Registers  'js' handler for JavaScript inclusion within handlebars templates.
      * {{js .}}
      */
-    Handlebars.registerHelper('js', function (contexts) {
-        var i, url, html,
+    Handlebars.registerHelper('js', function () {
+        var i, url, length,
+            html = '',
             theme = caramel.theme(),
-            js = contexts._.js,
-            length = js.length;
-        html = meta(theme);
+            js = caramel.meta().js;
+        if (!js) {
+            return html;
+        }
+        length = js.length;
+        html += meta(theme);
         if (length == 0) {
             return new Handlebars.SafeString(html);
         }
         url = theme.url;
         for (i = 0; i < length; i++) {
             //remove \n when production = true
-            html += '\n' + renderJS(url.call(theme, js[i]));
+            html += '\n' + renderJS(url.call(theme, 'js/' + js[i]));
         }
         return new Handlebars.SafeString(html);
     });
@@ -86,18 +90,21 @@ caramel.engine('handlebars', (function () {
      * Registers  'css' handler for CSS inclusion within handlebars templates.
      * {{css .}}
      */
-    Handlebars.registerHelper('css', function (contexts) {
-        var i, url,
+    Handlebars.registerHelper('css', function () {
+        var i, url, length,
+            html = '',
             theme = caramel.theme(),
-            css = contexts._.css,
-            length = css.length,
-            html = '';
-        if (length == 0) {
+            css = caramel.meta().css;
+        if (!css) {
             return html;
+        }
+        length = css.length;
+        if (length == 0) {
+            return new Handlebars.SafeString(html);
         }
         url = theme.url;
         for (i = 0; i < length; i++) {
-            html += renderCSS(url.call(theme, css[i]));
+            html += renderCSS(url.call(theme, 'css/' + css[i]));
         }
         return new Handlebars.SafeString(html);
     });
@@ -106,29 +113,25 @@ caramel.engine('handlebars', (function () {
      * Registers  'code' handler for JavaScript inclusion within handlebars templates.
      * {{code .}}
      */
-    Handlebars.registerHelper('code', function (contexts) {
-        var i, file, template, key,
+    Handlebars.registerHelper('code', function () {
+        var i, file, template, length,
+            html = '',
             theme = caramel.theme(),
-            caching = caramel.configs().cache,
-            codes = contexts._.code,
-            length = codes.length,
-            prefix = codesDir + '/',
-            html = '';
+            meta = caramel.meta(),
+            codes = meta.code;
+        if (!codes) {
+            return html;
+        }
+        length = codes.length;
         if (length == 0) {
             return html;
         }
         for (i = 0; i < length; i++) {
-            key = prefix + codes[i];
-            if (caching) {
-                template = cache(key);
-            }
-            if (!template) {
-                file = new File(theme.resolve(codes[i]) + '.hbs');
-                file.open('r');
-                template = cache(key, Handlebars.compile(file.readAll()));
-                file.close();
-            }
-            html += template(contexts);
+            file = new File(theme.resolve('code/' + codes[i]));
+            file.open('r');
+            template = Handlebars.compile(file.readAll());
+            file.close();
+            html += template(meta.data);
         }
         return new Handlebars.SafeString(html);
     });
@@ -142,6 +145,14 @@ caramel.engine('handlebars', (function () {
             return path;
         }
         return caramel.url(path);
+    });
+
+    /**
+     * Registers  'json' handler for serializing objects.
+     * {{json data}}
+     */
+    Handlebars.registerHelper('json', function (obj) {
+        return obj ? new Handlebars.SafeString(stringify(obj)) : null;
     });
 
     /**
@@ -183,20 +194,15 @@ caramel.engine('handlebars', (function () {
         return renderJS(code, true);
     };
 
-    renderData = function (data, caching) {
+    renderData = function (data) {
         var template,
-            key = partialsDir + '/' + data.partial,
             context = typeof data.context === 'function' ? data.context() : data.context;
         if (data.partial) {
             if (log.isDebugEnabled()) {
                 log.debug('Rendering template ' + data.partial);
             }
-            if (caching) {
-                template = cache(key);
-            }
-            if (!template) {
-                template = cache(key, Handlebars.compile(Handlebars.partials[data.partial]));
-            }
+
+            template = Handlebars.compile(Handlebars.partials[data.partial]);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug('No template, serializing data');
@@ -217,29 +223,13 @@ caramel.engine('handlebars', (function () {
         }
     };
 
-    renderJS = function (js, inline) {
-        return '<script type="application/javascript"' + (inline ? '>' + js : ' src="' + js + '">') + '</script>';
-    };
+    helpersDir = 'helpers';
 
-    renderCSS = function (css) {
-        return '<link rel="stylesheet" type="text/css" href="' + css + '"/>';
-    };
-
-    codesDir = 'codes';
+    renderersDir = 'renderers';
 
     pagesDir = 'pages';
 
-    helpersDir = 'helpers';
-
     partialsDir = 'partials';
-
-    layoutsDir = 'layouts';
-
-    helper = function (name) {
-        var theme = caramel.theme(),
-            path = theme.resolve(helpersDir + '/' + name + '.js');
-        return new File(path).isExists() ? require(path) : null;
-    };
 
     partials = function (Handlebars) {
         var theme = caramel.theme();
@@ -275,152 +265,73 @@ caramel.engine('handlebars', (function () {
         this.partials(Handlebars);
     };
 
-    /**
-     * Render function of handlebars engine. This can be overridden by new themes.
-     * @param data
-     * @param meta
-     */
     render = function (data, meta) {
-        var file, template, path, layout, area, areas, blocks, block, length, i, hp, key,
-            js = [],
-            css = [],
-            code = [],
-            config = caramel.configs();
-        layout = this.layout(data, meta);
-        if (!layout) {
+        var fn,
+            path = meta.request.getMappedPath() || meta.request.getRequestURI();
+        path = caramel.theme().resolve(renderersDir + path.substring(0, path.length - 4) + '.js');
+        if (log.isDebugEnabled()) {
+            log.debug('Rendering data for the request using : ' + path);
+        }
+        if (!new File(path).isExists() || !(fn = require(path).render)) {
             print(caramel.build(data));
             return;
         }
-        js = layout.js ? js.concat(layout.js) : js;
-        css = layout.css ? css.concat(layout.css) : css;
-        code = layout.code ? code.concat(layout.code) : code;
-        areas = layout.areas;
-        for (area in areas) {
-            if (areas.hasOwnProperty(area)) {
-                blocks = areas[area];
-                length = blocks.length;
-                for (i = 0; i < length; i++) {
-                    renderer = null;
-                    block = blocks[i];
-                    if (!block.partial) {
-                        continue;
-                    }
-                    hp = helper(block.partial);
-                    if (hp) {
-                        if (hp.renderer) {
-                            renderer = hp.renderer.call(this, block, area, meta);
-                            if (log.isDebugEnabled()) {
-                                log.debug('Overridden renderer - "' + block.partial + '" : ' + stringify(renderer));
-                            }
-                        }
-                        if (hp.format) {
-                            block.context = hp.format(block.context, data, layout.page, area, meta);
-                            if (log.isDebugEnabled()) {
-                                log.debug('Formatted data - "' + block.partial + '" : ' + stringify(block.context));
-                            }
-                        }
-                    }
-                    if (!renderer) {
-                        renderer = this.renderer(block, layout.page, area, meta);
-                    }
-                    js = js.concat(renderer.js);
-                    css = css.concat(renderer.css);
-                    code = code.concat(renderer.code);
-                }
-            }
-        }
-        areas._ = {};
-        areas._.js = js;
-        areas._.css = css;
-        areas._.code = code;
-        if (log.isDebugEnabled()) {
-            log.debug('Layout generated : ' + stringify(areas));
-        }
-        path = caramel.theme().resolve(pagesDir + '/' + layout.page + '.hbs');
-        if (log.isDebugEnabled()) {
-            log.debug('Rendering page : ' + path);
-        }
-        key = pagesDir + '/' + layout.page;
-        if (config.cache) {
-            template = cache(key);
-        }
-        if (!template) {
-            file = new File(path);
-            file.open('r');
-            template = cache(key, Handlebars.compile(file.readAll()));
-            file.close();
-        }
-        print(template(areas));
+        fn(theme, data, meta, function (path) {
+            return require(caramel.theme().resolve(path));
+        });
     };
 
     /**
-     * Renderer function of handlebars engine. This can be overridden.
-     * @param data
-     * @param area
-     * @param meta
-     * @return {Object}
+     * Render function of handlebars engine. This can be overridden by new themes.
      */
-    renderer = function (data, area, meta) {
-        var path, ren,
-            js = [],
-            css = [],
-            code = [],
-            theme = caramel.theme();
-        path = 'js/' + data.partial + '.js';
-        if (new File(theme.resolve(path)).isExists()) {
-            js.push(path);
+    theme = function (page, context, js, css, code) {
+        var file, template, path, area, blocks, helper, length, i, o,
+            meta = caramel.meta();
+        js = js || [];
+        css = css || [];
+        code = code || [];
+        for (area in context) {
+            if (context.hasOwnProperty(area)) {
+                blocks = context[area];
+                length = blocks.length;
+                for (i = 0; i < length; i++) {
+                    path = caramel.theme().resolve(helpersDir + '/' + blocks[i].partial + '.js');
+                    if (new File(path).isExists()) {
+                        helper = require(path);
+                        if (helper.resources) {
+                            o = helper.resources(page, meta);
+                            js = o.js ? js.concat(o.js) : js;
+                            css = o.css ? css.concat(o.css) : css;
+                            code = o.code ? code.concat(o.code) : code;
+                        }
+                    }
+                }
+            }
         }
-        path = 'css/' + data.partial + '.css';
-        if (new File(theme.resolve(path)).isExists()) {
-            css.push(path);
-        }
-        path = 'code/' + data.partial + '.hbs';
-        if (new File(theme.resolve(path)).isExists()) {
-            code.push(path);
-        }
-        ren = {
-            partial: data.partial,
-            js: js,
-            css: css,
-            code: code
-        };
+        meta.js = js;
+        meta.css = css;
+        meta.code = code;
+        path = caramel.theme().resolve(pagesDir + '/' + page + '.hbs');
         if (log.isDebugEnabled()) {
-            log.debug('Default renderer - "' + data.partial + '" : ' + stringify(ren));
+            log.debug('Rendering page : ' + path);
         }
-        return ren;
+        file = new File(path);
+        file.open('r');
+        template = Handlebars.compile(file.readAll());
+        file.close();
+        print(template(context));
     };
 
-    layout = function (data, meta) {
-        var fn,
-            layout = null,
-            theme = caramel.theme(),
-            path = meta.request.getMappedPath() || meta.request.getRequestURI();
-        path = theme.resolve(layoutsDir + path.substring(0, path.length - 4) + '.js');
-        if (log.isDebugEnabled()) {
-            log.debug('Layouting data for the request using : ' + path);
-        }
-        if (new File(path).isExists()) {
-            fn = require(path).layout;
-            layout = fn ? fn(data, meta) : data;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug('Layout data : ' + stringify(layout));
-        }
-        return layout;
+    renderJS = function (js, inline) {
+        return '<script type="application/javascript"' + (inline ? '>' + js : ' src="' + js + '">') + '</script>';
+    };
+
+    renderCSS = function (css) {
+        return '<link rel="stylesheet" type="text/css" href="' + css + '"/>';
     };
 
     globals = function (data, meta) {
         return null;
-    };
-
-    cache = function (key, val) {
-        //TODO : handlebars fails due to rhino's prototyping model, hence caching is disabled
-        return val;
-        /*if (!val) {
-         return application.get(key);
-         }
-         application.put(key, val);
-         return val;*/
     };
 
     populate = function (dir, ext, theme) {
@@ -443,8 +354,6 @@ caramel.engine('handlebars', (function () {
         partials: partials,
         globals: globals,
         init: init,
-        render: render,
-        layout: layout,
-        renderer: renderer
+        render: render
     };
 })());

@@ -1,6 +1,6 @@
 var caramel = caramel || (function () {
     var load, Theme, theme, Engine, engine, meta, render,
-        configs, context, url, negotiate, send, sendJSON, build, parseRequest,
+        configs, context, url, build, parseRequest,
         log = new Log(),
         themes = {},
         engines = {};
@@ -189,60 +189,47 @@ var caramel = caramel || (function () {
      * @param data
      */
     render = function (data) {
-        var negotiation = configs().negotiation,
-            meta = {
-                data: data,
-                request: request,
-                response: response,
-                session: session,
-                application: application
-            };
+        var meta = {
+            data: data,
+            request: request,
+            response: response,
+            session: session,
+            application: application
+        };
         caramel.meta(meta);
         if (log.isDebugEnabled()) {
             data = build(data);
             log.debug('Rendering request : ' + stringify(parseRequest(meta.request)));
             log.debug('Rendering data : ' + stringify(data));
         }
-        if (!negotiation) {
-            send(data, meta);
-            return;
-        }
-        negotiate(data, meta);
-    };
-
-    negotiate = function (data, meta) {
-        var req = meta.request, accept = req.getHeader('Accept');
-        if (!accept) {
-            send(data, meta);
-            return;
-        }
-        accept = accept.toLowerCase();
-        if (log.isDebugEnabled()) {
-            log.debug('Negotiating data : ' + accept);
-        }
-        if (accept.indexOf('application/json') != -1) {
-            sendJSON(data, meta);
-            return;
-        }
-        send(data, meta);
-    };
-
-    send = function (data, meta) {
         caramel.theme().engine.render(data, meta);
     };
 
-    sendJSON = function (data, meta) {
-        print(build(data));
-    };
-
-    build = function (obj) {
-        var name, o;
+    build = function (obj, depth) {
+        var name, type, i, length;
+        depth = (depth !== undefined) ? (depth - 1) : 0;
+        if(depth <= 0) {
+            return obj;
+        }
+        type = typeof obj;
+        if (type === 'function') {
+            return build(obj(), depth);
+        }
+        if (obj instanceof String || type === 'string' ||
+            obj instanceof Number || type === 'number' ||
+            obj instanceof Boolean || type === 'boolean') {
+            return obj;
+        }
+        if (obj instanceof Array) {
+            length = obj.length;
+            for (i = 0; i < length; i++) {
+                obj[i] = build(obj[i], depth);
+            }
+            return obj;
+        }
         for (name in obj) {
             if (obj.hasOwnProperty(name)) {
-                o = obj[name];
-                if (typeof o === 'function') {
-                    obj[name] = o();
-                }
+                obj[name] = build(obj[name], depth);
             }
         }
         return obj;
@@ -264,7 +251,7 @@ var caramel = caramel || (function () {
      */
     url = function (path) {
         context = context || configs().context;
-        return context + (path.charAt(0) !== '/' ? '/' : '') + path;
+        return (context !== '/' ? context : '') + path;
     };
 
     parseRequest = function (req) {
