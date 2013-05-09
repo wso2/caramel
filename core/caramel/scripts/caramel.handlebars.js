@@ -293,16 +293,18 @@ caramel.engine('handlebars', (function () {
         for (area in context) {
             if (context.hasOwnProperty(area)) {
                 blocks = context[area];
-                length = blocks.length;
-                for (i = 0; i < length; i++) {
-                    path = caramel.theme().resolve(helpersDir + '/' + blocks[i].partial + '.js');
-                    if (new File(path).isExists()) {
-                        helper = require(path);
-                        if (helper.resources) {
-                            o = helper.resources(page, meta);
-                            js = o.js ? js.concat(o.js) : js;
-                            css = o.css ? css.concat(o.css) : css;
-                            code = o.code ? code.concat(o.code) : code;
+                if (blocks instanceof Array) {
+                    length = blocks.length;
+                    for (i = 0; i < length; i++) {
+                        path = caramel.theme().resolve(helpersDir + '/' + blocks[i].partial + '.js');
+                        if (new File(path).isExists()) {
+                            helper = require(path);
+                            if (helper.resources) {
+                                o = helper.resources(page, meta);
+                                js = o.js ? js.concat(o.js) : js;
+                                css = o.css ? css.concat(o.css) : css;
+                                code = o.code ? code.concat(o.code) : code;
+                            }
                         }
                     }
                 }
