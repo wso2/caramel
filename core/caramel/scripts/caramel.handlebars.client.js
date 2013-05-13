@@ -40,6 +40,14 @@
     });
 
     /**
+     * Registers  't' handler for translating texts.
+     * {{t "programming"}}
+     */
+    Handlebars.registerHelper('t', function (text) {
+        return text;
+    });
+
+    /**
      * Registers  'json' handler for serializing objects.
      * {{json data}}
      */

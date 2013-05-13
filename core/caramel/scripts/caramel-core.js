@@ -1,6 +1,7 @@
 var caramel = caramel || (function () {
     var load, Theme, theme, Engine, engine, meta, render,
-        configs, context, url, build, parseRequest,
+        configs, context, url, build, parseRequest, translate, languagesDir, themesDir,
+        languages = {},
         log = new Log(),
         themes = {},
         engines = {};
@@ -99,8 +100,10 @@ var caramel = caramel || (function () {
      * @constructor
      */
     Theme = function (name, options) {
-        var option;
+        var option,
+            config = configs();
         this.name = name;
+        this.themesDir = config.themesDir || themesDir;
         var prototype = typeof options['prototype'] === 'string' ? theme(options['prototype']) : options['prototype'];
         if (prototype) {
             this.__proto__ = prototype;
@@ -117,10 +120,9 @@ var caramel = caramel || (function () {
     };
 
     Theme.prototype = {
-        themes: '/themes',
 
         base: function () {
-            return this.themes + '/' + this.name;
+            return this.themesDir + '/' + this.name;
         },
 
         resolve: function (path) {
@@ -166,6 +168,10 @@ var caramel = caramel || (function () {
         return themes[name];
     };
 
+    languagesDir = '/i18n';
+
+    themesDir = '/themes';
+
     /**
      * Get and set caramel configurations.
      * @param configs
@@ -208,7 +214,7 @@ var caramel = caramel || (function () {
     build = function (obj, depth) {
         var name, type, i, length;
         depth = (depth !== undefined) ? (depth - 1) : 0;
-        if(depth <= 0) {
+        if (depth <= 0) {
             return obj;
         }
         type = typeof obj;
@@ -265,6 +271,25 @@ var caramel = caramel || (function () {
         };
     };
 
+    translate = function (text) {
+        var language, dir, path,
+            config = configs(),
+            code = config.language ? config.language() : 'en';
+        language = languages[code];
+        if (!language) {
+            dir = config.languagesDir || languagesDir;
+            path = dir + '/' + code + '.json';
+            if (!new File(path).isExists()) {
+                return text;
+            }
+            language = (languages[code] = require(path));
+            if (log.isDebugEnabled()) {
+                log.debug('Language json loaded : ' + path);
+            }
+        }
+        return language[text];
+    };
+
     return {
         meta: meta,
         theme: theme,
@@ -272,6 +297,7 @@ var caramel = caramel || (function () {
         render: render,
         configs: configs,
         url: url,
-        build: build
+        build: build,
+        translate: translate
     };
 })();

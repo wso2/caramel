@@ -1,6 +1,7 @@
 caramel.engine('handlebars', (function () {
     var renderData, partials, init, page, render, meta, partialsDir, renderJS, renderCSS,
-        pagesDir, populate, serialize, globals, theme, renderersDir, helpersDir,
+        pagesDir, populate, serialize, globals, theme, renderersDir, helpersDir, translate,
+        languages = {},
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
 
@@ -148,6 +149,14 @@ caramel.engine('handlebars', (function () {
     });
 
     /**
+     * Registers  't' handler for translating texts.
+     * {{t "programming"}}
+     */
+    Handlebars.registerHelper('t', function (text) {
+        return translate(text) || text;
+    });
+
+    /**
      * Registers  'json' handler for serializing objects.
      * {{json data}}
      */
@@ -281,6 +290,25 @@ caramel.engine('handlebars', (function () {
         });
     };
 
+    translate = function (text) {
+        var language, dir, path,
+            config = caramel.configs(),
+            code = config.language ? config.language() : 'en';
+        language = languages[code];
+        if (!language) {
+            dir = 'i18n';
+            path = caramel.theme().resolve(dir + '/' + code + '.json');
+            if (!new File(path).isExists()) {
+                return text;
+            }
+            language = (languages[code] = require(path));
+            if (log.isDebugEnabled()) {
+                log.debug('Language json loaded : ' + path);
+            }
+        }
+        return language[text] || caramel.translate(text);
+    };
+
     /**
      * Render function of handlebars engine. This can be overridden by new themes.
      */
@@ -354,6 +382,7 @@ caramel.engine('handlebars', (function () {
 
     return {
         partials: partials,
+        translate: translate,
         globals: globals,
         init: init,
         render: render
