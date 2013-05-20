@@ -33,6 +33,32 @@
         <h3>Lets Start Tasting Caramel</h3>
 
 <p>Caramel is a MVC framework built for <a href="http://jaggeryjs.org">Jaggery</a>. The intent of the framework is to bootstrap application development and enforce a standard for developing web applications using Jaggery. By no means Caramel trying to lock down developer creativity or freedom but simply trying enforce discipline to large development teams working on Jaggery projects.</p>
+
+<p>A web application written according to Caramel, takes a certain structure, this is to separate the models, controllers and the views</p>
+
+<p>Lets learn by an example; Our use case for the study is a static blog. where you drop posts as “markdown” formatted files to a defined location and the blog will pick them and show in an appropriately formatted UI</p>
+
+<p>Caramel application config (app.js)</p>
+
+<div class="highlight"><pre><span class="nx">caramel</span><span class="p">.</span><span class="nx">configs</span><span class="p">({</span>
+    <span class="nx">context</span><span class="o">:</span> <span class="s1">'/blog'</span><span class="p">,</span>
+    <span class="nx">negotiation</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="nx">themer</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">'classic'</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+
+<p>The app config informs caramel to use the specified theme to render the provided data, it also specifies the application context and if content negotiation is enabled or not, which we will get back later.</p>
+
+<p>The meaning of defining a theme is that, by a configuration change, a new theme can be plugged to the application, and the concept is native to Caramel</p>
+
+<h3>A simple “Hello World” with Caramel</h3>
+
+<p>Before we start with the blog example; First let's write a simple Hello World Jaggery App. </p>
+
+<p>Application name : hello, Theme: default 
+Lets call the homepage of the app “home.jag”. In Caramel, the page that servers the request act as one of the controllers of the app. it defines what data needs to be presented in that particular page. Content of the page can be as follows</p>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
