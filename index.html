@@ -30,7 +30,7 @@
 
       </header>
       <section>
-        <h3>Lets Start Tasting Caramel</h3>
+        <h2>Lets Start Tasting Caramel</h2>
 
 <p>Caramel is a MVC framework built for <a href="http://jaggeryjs.org">Jaggery</a>. The intent of the framework is to bootstrap application development and enforce a standard for developing web applications using Jaggery. By no means Caramel trying to lock down developer creativity or freedom but simply trying enforce discipline to large development teams working on Jaggery projects.</p>
 
@@ -38,7 +38,17 @@
 
 <p>Lets learn by an example; Our use case for the study is a static blog. where you drop posts as “markdown” formatted files to a defined location and the blog will pick them and show in an appropriately formatted UI</p>
 
-<p>Caramel application config (app.js)</p>
+<p>There are few core elements in Caramel
+1. Application config (app.js) - Place where you define the context of the application, default theme and other configuration
+2. Main controller - This is the place which is invoked by a request (the page URL you hit in the browser)
+3. Theme - The place where you put all the templates and reusable template partials
+4. Renderer - The page that contains the rendering function for a particular template  </p>
+
+<p>Before we start with the blog example; First let's write a simple Hello World Jaggery App.</p>
+
+<h3>A simple “Hello World” with Caramel</h3>
+
+<p>First the application config <code>/hello/app.js</code></p>
 
 <div class="highlight"><pre><span class="nx">caramel</span><span class="p">.</span><span class="nx">configs</span><span class="p">({</span>
     <span class="nx">context</span><span class="o">:</span> <span class="s1">'/blog'</span><span class="p">,</span>
@@ -49,16 +59,72 @@
 <span class="p">});</span>
 </pre></div>
 
-<p>The app config informs caramel to use the specified theme to render the provided data, it also specifies the application context and if content negotiation is enabled or not, which we will get back later.</p>
-
 <p>The meaning of defining a theme is that, by a configuration change, a new theme can be plugged to the application, and the concept is native to Caramel</p>
 
-<h3>A simple “Hello World” with Caramel</h3>
+<p>Lets call the homepage of the app “index.jag” (<code>/hello/index.jag</code>). In Caramel, the page that servers the request act as one of the controllers of the app. it defines what data needs to be presented in that particular page. Content of the page will be as follows</p>
 
-<p>Before we start with the blog example; First let's write a simple Hello World Jaggery App. </p>
+<div class="highlight"><pre><span class="o">&lt;%</span>
+   <span class="kd">var</span> <span class="nx">caramel</span><span class="p">,</span>
+   <span class="nx">body</span> <span class="o">=</span> <span class="s2">"Lorem ipsum dolor sit amet"</span><span class="p">;</span>
 
-<p>Application name : hello, Theme: default 
-Lets call the homepage of the app “home.jag”. In Caramel, the page that servers the request act as one of the controllers of the app. it defines what data needs to be presented in that particular page. Content of the page can be as follows</p>
+   <span class="nx">caramel</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'caramel'</span><span class="p">).</span><span class="nx">caramel</span><span class="p">;</span>
+   <span class="nx">caramel</span><span class="p">.</span><span class="nx">render</span><span class="p">({</span>
+     <span class="s1">'title'</span><span class="o">:</span> <span class="p">{</span><span class="nx">text</span> <span class="o">:</span><span class="s1">'Hello World'</span><span class="p">},</span> <span class="c1">// set html title for index page</span>
+     <span class="s1">'body'</span><span class="o">:</span> <span class="p">{</span><span class="nx">text</span><span class="o">:</span><span class="nx">body</span><span class="p">}</span> <span class="c1">//set html body for index page</span>
+   <span class="p">});</span>
+<span class="o">%&gt;</span>
+</pre></div>
+
+<p>This script will provide the title as "Hello World" and the body as "Lorem ipsum" to caramel render function.</p>
+
+<p>Now lets move to the theme, first we need to set handlebars as the default caramel theming engine. Under the <code>themes/classic</code> directory lets create <code>theme.js</code> script</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">engine</span> <span class="o">=</span> <span class="nx">caramel</span><span class="p">.</span><span class="nx">engine</span><span class="p">(</span><span class="s1">'handlebars'</span><span class="p">,</span> <span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+<span class="p">}()));</span>
+</pre></div>
+
+<p>lets write our handlebars template which is going to define the view for our theme. Create simple.hbs inside <code>themes/classic/pages</code></p>
+
+<div class="highlight"><pre><span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;title&gt;</span>{{include title}}<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;div&gt;</span>{{include body}}<span class="nt">&lt;/div&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
+
+<p>This will let our theme to include the title and the body <a href="http://handlebarsjs.com/expressions.html">partials</a>, which we are going to create in the next step. Partials come to play when you have a single template that you need to use in different contexts. For example you can use above template in different contexts by setting different titles and body contents.</p>
+
+<p>Now lets create above inside <code>themes/classic/partials/title.hbs</code> and <code>body.hbs</code> directory, </p>
+
+<p>title.hbs
+<code>
+{{{title}}}
+</code></p>
+
+<p>body.hbs
+<code>
+{{{body}}}
+</code></p>
+
+<p>Lets move to the renderer, Create <code>inside themes/classic/renderers/index.js</code> </p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">render</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">theme</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">meta</span><span class="p">,</span> <span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">theme</span><span class="p">(</span><span class="s1">'simple'</span><span class="p">,</span> <span class="p">{</span>
+    <span class="nx">title</span><span class="o">:</span> <span class="p">[</span>
+         <span class="p">{</span> <span class="nx">partial</span><span class="o">:</span><span class="s1">'title'</span><span class="p">,</span> <span class="nx">context</span><span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">title</span><span class="p">}</span>
+     <span class="p">],</span>
+     <span class="nx">body</span><span class="o">:</span> <span class="p">[</span>
+         <span class="p">{</span> <span class="nx">partial</span><span class="o">:</span><span class="s1">'body'</span><span class="p">,</span> <span class="nx">context</span><span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">body</span><span class="p">}</span>
+     <span class="p">]</span>
+    <span class="p">});</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>Now you can browse the homepage and it will display rendered web page with  Hello Title 
+as the  title and  Hello World as the body.</p>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
