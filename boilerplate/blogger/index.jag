@@ -1,0 +1,10 @@
+<%
+var caramel;
+	reader = require('/modules/reader.js'),
+
+	caramel = require('caramel').caramel;
+	caramel.render({
+		'title': {text :'Blog Aggregator'},
+		'body': {text:reader.readPosts()}
+	});
+%>

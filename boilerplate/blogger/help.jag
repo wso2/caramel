@@ -1,0 +1,16 @@
+<%
+var caramel;
+var path = "content/pages/help.html";
+
+	var helpFile = new File(path);
+	helpFile.open("r");
+	var body = "";
+	body = helpFile.readAll();
+	helpFile.close();
+
+	caramel = require('caramel').caramel;
+	caramel.render({
+		'title': {text :'Blog Aggregator | Help'},
+		'body': {text : body}
+	});
+%>
