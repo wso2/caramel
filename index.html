@@ -40,7 +40,7 @@
 
 <p>There are few core elements in Caramel</p>
 
-<ol>
+<ul>
 <li>
 <strong>Application config (app.js)</strong> - Place where you define the context of the application, default theme    and other configuration</li>
 <li>
@@ -48,9 +48,19 @@
 <li>
 <strong>Theme</strong> - The place where you put all the templates and reusable template partials</li>
 <li>
-<strong>Renderer</strong> - The page that contains the rendering function for a particular template<br>
-</li>
-</ol><p>Before we start with the blog example; First let's write a simple Hello World Jaggery App.</p>
+<strong>Renderer</strong> - The page that contains the rendering function for a particular template</li>
+</ul><p>Apart from the above constructs, some of the important concepts behind Caramel is the use of Partials, Pages, Helpers and Modules </p>
+
+<ul>
+<li>
+<strong>Partials</strong> - A section of html that can be plugged to the main page (i.e: Footer, Navigation, Header)</li>
+<li>
+<strong>Pages</strong> - The main template which is like a container or a layout this can consist of many partial elements and is rendered during runtime based on the data set.</li>
+<li>
+<strong>Helpers</strong> - Helper functions that can alter the data rendered on the template (i.e. providing i18n support)</li>
+<li>
+<strong>Modules</strong> - Modules create information which is needed for views (i.e if you want to call a DB and fetch some data, you do it in a module)</li>
+</ul><p>Before we start with the blog example; First let's write a simple Hello World Jaggery App.</p>
 
 <h3>A simple “Hello World” with Caramel</h3>
 
@@ -101,7 +111,7 @@
 <span class="nt">&lt;/html&gt;</span>
 </pre></div>
 
-<p>This will let our theme to include the title and the body <a href="http://handlebarsjs.com/expressions.html">partials</a>, which we are going to create in the next step. Partials come to play when you have a single template that you need to use in different contexts. For example you can use above template in different contexts by setting different titles and body contents.</p>
+<p>This will let our theme to include the title and the body <a href="http://mustache.github.io/mustache.5.html">partials</a>, which we are going to create in the next step. Partials come to play when you have a single template that you need to use in different contexts. For example you can use above template in different contexts by setting different titles and body contents.</p>
 
 <p>Now lets create above inside <code>themes/classic/partials/title.hbs</code> and <code>body.hbs</code> directory, </p>
 
@@ -191,6 +201,60 @@
     <span class="p">});</span>
 <span class="o">%&gt;</span>
 </pre></div>
+
+<p>As in our Hello World app, we need to define handlebars as the default themeing engine. Under the <code>themes/classic</code> directory lets create theme.js</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">engine</span> <span class="o">=</span> <span class="nx">caramel</span><span class="p">.</span><span class="nx">engine</span><span class="p">(</span><span class="s1">'handlebars'</span><span class="p">,</span> <span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+<span class="p">}()));</span>
+</pre></div>
+
+<p>lets write some HTML with handlebars which is going to define the view for our theme classic. As we have done earlier, create <code>themes/classic/pages/simple.hbs</code></p>
+
+<div class="highlight"><pre><span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;head&gt;</span>
+<span class="nt">&lt;title&gt;</span>{{include title}}<span class="nt">&lt;/title&gt;</span>
+<span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">"{{url "</span><span class="err">/</span><span class="na">themes</span><span class="err">/</span><span class="na">classic</span><span class="err">/</span><span class="na">css</span><span class="err">/</span><span class="na">styles</span><span class="err">.</span><span class="na">css</span><span class="err">"}}"</span> <span class="na">rel=</span><span class="s">"stylesheet"</span><span class="nt">&gt;</span>
+{{css .}}
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"{{url "</span><span class="err">/</span><span class="na">themes</span><span class="err">/</span><span class="na">classic</span><span class="err">/</span><span class="na">js</span><span class="err">/</span><span class="na">scripts</span><span class="err">.</span><span class="na">js</span><span class="err">"}}"</span><span class="nt">&gt;&lt;/script&gt;</span>
+{{js .}}
+<span class="nt">&lt;/head&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+{{&gt;header}}
+<span class="nt">&lt;div&gt;</span>{{include body}}<span class="nt">&lt;/div&gt;</span>
+{{&gt;footer}}
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+</pre></div>
+
+<p>The above is the page layout that will let us include the title, header, footer and the body sections (Partials)</p>
+
+<p><code>{{css .}}</code> and <code>{{js .}} are two helpers that includes default css and js in respective directories, these helpers should be placed to</code>themes/classic/helpers`` and will look like</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">resources</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">page</span><span class="p">,</span> <span class="nx">meta</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">{</span>
+    <span class="nx">js</span><span class="o">:</span> <span class="p">[</span><span class="s1">'navigation.js'</span><span class="p">,</span> <span class="s1">'jquery.validate.js'</span><span class="p">],</span>
+    <span class="nx">css</span><span class="o">:</span> <span class="p">[</span><span class="s1">'navigation.css'</span><span class="p">]</span>
+    <span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>Inside Partials we have <code>title.hbs</code> , <code>body.hbs</code> and <code>footer.hbs</code> as same as in <code>Hello World</code> app</p>
+
+<p>Our renderer is also the same at <code>themes/classic/renderers</code></p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">render</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">theme</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">meta</span><span class="p">,</span> <span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">theme</span><span class="p">(</span><span class="s1">'simple'</span><span class="p">,</span> <span class="p">{</span>
+    <span class="nx">title</span><span class="o">:</span> <span class="p">[</span>
+         <span class="p">{</span> <span class="nx">partial</span><span class="o">:</span><span class="s1">'title'</span><span class="p">,</span> <span class="nx">context</span><span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">title</span><span class="p">}</span>
+     <span class="p">],</span>
+     <span class="nx">body</span><span class="o">:</span> <span class="p">[</span>
+         <span class="p">{</span> <span class="nx">partial</span><span class="o">:</span><span class="s1">'body'</span><span class="p">,</span> <span class="nx">context</span><span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">body</span><span class="p">}</span>
+     <span class="p">]</span>
+    <span class="p">});</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>Now create few HTML formatted files inside <code>content/posts</code> directory with created timestamp as the filename and browse our home page. You can checkout the sample app from <a href="">GitHub</a></p>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
