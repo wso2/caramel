@@ -30,21 +30,27 @@
 
       </header>
       <section>
-        <h2>Lets Start Tasting Caramel</h2>
+        <h1>Lets Start Tasting Caramel</h1>
 
 <p>Caramel is a MVC framework built for <a href="http://jaggeryjs.org">Jaggery</a>. The intent of the framework is to bootstrap application development and enforce a standard for developing web applications using Jaggery. By no means Caramel trying to lock down developer creativity or freedom but simply trying enforce discipline to large development teams working on Jaggery projects.</p>
 
 <p>A web application written according to Caramel, takes a certain structure, this is to separate the models, controllers and the views</p>
 
-<p>Lets learn by an example; Our use case for the study is a static blog. where you drop posts as “markdown” formatted files to a defined location and the blog will pick them and show in an appropriately formatted UI</p>
+<p>Lets learn by an example; Our use case for the study is a static blog. where you drop posts as files to a defined location and the blog will pick them and show in an appropriately formatted UI</p>
 
-<p>There are few core elements in Caramel
-1. Application config (app.js) - Place where you define the context of the application, default theme and other configuration
-1. Main controller - This is the place which is invoked by a request (the page URL you hit in the browser)
-1. Theme - The place where you put all the templates and reusable template partials
-1. Renderer - The page that contains the rendering function for a particular template  </p>
+<p>There are few core elements in Caramel</p>
 
-<p>Before we start with the blog example; First let's write a simple Hello World Jaggery App.</p>
+<ol>
+<li>
+<strong>Application config (app.js)</strong> - Place where you define the context of the application, default theme    and other configuration</li>
+<li>
+<strong>Main controller</strong> - This is the place which is invoked by a request (the page URL you hit in the browser)</li>
+<li>
+<strong>Theme</strong> - The place where you put all the templates and reusable template partials</li>
+<li>
+<strong>Renderer</strong> - The page that contains the rendering function for a particular template<br>
+</li>
+</ol><p>Before we start with the blog example; First let's write a simple Hello World Jaggery App.</p>
 
 <h3>A simple “Hello World” with Caramel</h3>
 
@@ -99,17 +105,17 @@
 
 <p>Now lets create above inside <code>themes/classic/partials/title.hbs</code> and <code>body.hbs</code> directory, </p>
 
-<p>title.hbs
+<p><strong>title.hbs</strong>
 <code>
 {{{title}}}
 </code></p>
 
-<p>body.hbs
+<p><strong>body.hbs</strong>
 <code>
 {{{body}}}
 </code></p>
 
-<p>Lets move to the renderer, Create <code>inside themes/classic/renderers/index.js</code> </p>
+<p>Lets move to the renderer, Create <code>inside themes/classic/renderers/index.js</code> this is the rendering function for index.jag page. It define from which partial the title has to be rendered and whats the data set needed for the partial</p>
 
 <div class="highlight"><pre><span class="kd">var</span> <span class="nx">render</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">theme</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">meta</span><span class="p">,</span> <span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">theme</span><span class="p">(</span><span class="s1">'simple'</span><span class="p">,</span> <span class="p">{</span>
@@ -123,8 +129,68 @@
 <span class="p">};</span>
 </pre></div>
 
-<p>Now you can browse the homepage and it will display rendered web page with  Hello Title 
-as the  title and  Hello World as the body.</p>
+<p>Hit hello/index.jag in the browser and that should render over caramalized hello world app. The final directory structure of the app will be</p>
+
+<pre><code>/index.jag
+/themes
++---/classic
+-------/theme.js
++------/renderers
+------------/index.js
++------/partials
+------------/title.hbs
+------------/body.hbs
++------/pages
+----------/simple.hbs
+</code></pre>
+
+<h2>Lets write a real world application</h2>
+
+<p>As we talked about, lets take a blog engine as an example, and compose one using caramel.</p>
+
+<p>First create a module with a function  which go through files within a given directory and reads file content. Will call this module reader, create reader.js inside top level modules directory with readPosts function. [/modules/reader.js]</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">readPosts</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="s2">"content/posts/"</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">dir</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">File</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">list</span> <span class="o">=</span> <span class="nx">dir</span><span class="p">.</span><span class="nx">listFiles</span><span class="p">();</span>
+    <span class="kd">var</span> <span class="nx">body</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">timeArray</span> <span class="o">=</span> <span class="p">[];</span>
+
+    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">list</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+     <span class="kd">var</span> <span class="nx">timestamp</span> <span class="o">=</span> <span class="nx">list</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">getName</span><span class="p">();</span> <span class="c1">//read the filename, file created //timestamp</span>
+     <span class="nx">timeArray</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">timestamp</span><span class="p">);</span>
+         <span class="c1">// sort filename array in //order to display newest post on the top</span>
+     <span class="nx">timeArray</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">){</span><span class="k">return</span> <span class="nx">a</span><span class="o">-</span><span class="nx">b</span><span class="p">});</span> 
+    <span class="p">}</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="nx">filename</span><span class="o">=</span><span class="nx">timeArray</span><span class="p">.</span><span class="nx">pop</span><span class="p">())</span> <span class="p">{</span>
+         <span class="kd">var</span> <span class="nx">blogFile</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">File</span><span class="p">(</span><span class="nx">path</span><span class="o">+</span><span class="nx">filename</span><span class="p">);</span>
+         <span class="nx">blogFile</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">"r"</span><span class="p">);</span>
+         <span class="kd">var</span> <span class="nx">post</span> <span class="o">=</span> <span class="s2">""</span><span class="p">;</span>
+         <span class="nx">post</span> <span class="o">=</span> <span class="nx">blogFile</span><span class="p">.</span><span class="nx">readAll</span><span class="p">();</span>
+         <span class="nx">body</span> <span class="o">+=</span><span class="nx">post</span><span class="p">;</span>
+         <span class="nx">body</span> <span class="o">+=</span><span class="s2">"&lt;br/&gt;"</span><span class="p">;</span>
+         <span class="nx">blogFile</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">body</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+
+<p>We need to require this module within our main Controller, so let's update our home page index.jag </p>
+
+<div class="highlight"><pre><span class="o">&lt;%</span>
+    <span class="kd">var</span> <span class="nx">caramel</span><span class="p">,</span>
+    <span class="nx">reader</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'/modules/reader.js'</span><span class="p">),</span> <span class="c1">//include our reader module</span>
+    <span class="nx">caramel</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'caramel'</span><span class="p">).</span><span class="nx">caramel</span><span class="p">;</span>
+
+    <span class="nx">caramel</span><span class="p">.</span><span class="nx">render</span><span class="p">({</span>
+     <span class="s1">'title'</span><span class="o">:</span> <span class="p">{</span><span class="nx">text</span> <span class="o">:</span><span class="s1">'Blog'</span><span class="p">},</span>
+     <span class="s1">'body'</span><span class="o">:</span> <span class="p">{</span><span class="nx">text</span><span class="o">:</span><span class="nx">reader</span><span class="p">.</span><span class="nx">readPosts</span><span class="p">()}</span>
+    <span class="p">});</span>
+<span class="o">%&gt;</span>
+</pre></div>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
