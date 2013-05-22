@@ -1,3 +1,0 @@
-Caramel.initializer("static", {
-
-});
