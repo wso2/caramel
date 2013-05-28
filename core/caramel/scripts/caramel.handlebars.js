@@ -2,6 +2,7 @@ caramel.engine('handlebars', (function () {
     var renderData, partials, init, page, render, meta, partialsDir, renderJS, renderCSS,
         pagesDir, populate, serialize, globals, theme, renderersDir, helpersDir, translate,
         languages = {},
+        caramelData = 'X-Caramel-Data',
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
 
@@ -312,15 +313,68 @@ caramel.engine('handlebars', (function () {
     /**
      * Render function of handlebars engine. This can be overridden by new themes.
      */
-    theme = function (page, context, js, css, code) {
-        var file, template, path, area, blocks, helper, length, i, o,
-            meta = caramel.meta();
+    theme = function (page, contexts, js, css, code) {
+        var file, template, path, area, blocks, helper, length, i, o, areas, block,
+            areaContexts, data, areaData, find, blockData,
+            meta = caramel.meta(),
+            xcd = meta.request.getHeader(caramelData);
         js = js || [];
         css = css || [];
         code = code || [];
-        for (area in context) {
-            if (context.hasOwnProperty(area)) {
-                blocks = context[area];
+
+        if (xcd) {
+            find = function (areaContexts, partial) {
+                var i,
+                    length = areaContexts.length;
+                for (i = 0; i < length; i++) {
+                    if (areaContexts[i].partial === partial) {
+                        return areaContexts[i].context;
+                    }
+                }
+                return null;
+            };
+            data = {
+                _: {
+                    js: js,
+                    css: css,
+                    code: code
+                }
+            };
+            areas = parse(xcd);
+            for (area in areas) {
+                if (areas.hasOwnProperty(area)) {
+                    areaContexts = contexts[area];
+                    if (areaContexts instanceof Array) {
+                        blocks = areas[area];
+                        areaData = (data[area] = {});
+                        length = blocks.length;
+                        for (i = 0; i < length; i++) {
+                            block = blocks[i];
+                            blockData = (areaData[block] = find(areaContexts, block));
+                            path = caramel.theme().resolve(helpersDir + '/' + block + '.js');
+                            if (new File(path).isExists()) {
+                                helper = require(path);
+                                if (helper.resources) {
+                                    o = helper.resources(page, meta);
+                                    blockData.js = o.js;
+                                    blockData.css = o.css;
+                                    blockData.code = o.code;
+                                }
+                            }
+                        }
+                    } else {
+                        data[area] = areaContexts;
+                    }
+                }
+            }
+            meta.response.addHeader('Content-Type', 'application/json');
+            print(data);
+            return;
+        }
+
+        for (area in contexts) {
+            if (contexts.hasOwnProperty(area)) {
+                blocks = contexts[area];
                 if (blocks instanceof Array) {
                     length = blocks.length;
                     for (i = 0; i < length; i++) {
@@ -349,7 +403,7 @@ caramel.engine('handlebars', (function () {
         file.open('r');
         template = Handlebars.compile(file.readAll());
         file.close();
-        print(template(context));
+        print(template(contexts));
     };
 
     renderJS = function (js, inline) {

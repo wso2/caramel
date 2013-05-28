@@ -1,5 +1,7 @@
 (function (Handlebars) {
 
+    var caramelData = 'X-Caramel-Data';
+
     /**
      * {{#itr context}}key : {{key}} value : {{value}}{{/itr}}
      */
@@ -83,7 +85,33 @@
         return html;
     });
 
+    /**
+     * {{#t "text"}}{{/t}}
+     */
+    Handlebars.registerHelper('t', function (text) {
+        return  new Handlebars.SafeString(text);
+    });
+
     caramel.unloaded = {};
+
+    caramel.data = function (areas, options) {
+        var err = options.error,
+            success = options.success,
+            headers = options.headers || (options.headers = {});
+        options.dataType = 'json';
+/*        options.success = function (data, status, xhr) {
+            success(null, data);
+        };
+        options.error = function (xhr, status, error) {
+            err({
+                xhr: xhr,
+                status: status,
+                error: error
+            });
+        };*/
+        headers[caramelData] = JSON.stringify(areas);
+        $.ajax(options);
+    };
 
     caramel.render = function (template, context, callback) {
         var partial, fns, html,
