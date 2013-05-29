@@ -324,11 +324,12 @@ caramel.engine('handlebars', (function () {
 
         if (xcd) {
             find = function (areaContexts, partial) {
-                var i,
+                var i, context,
                     length = areaContexts.length;
                 for (i = 0; i < length; i++) {
                     if (areaContexts[i].partial === partial) {
-                        return areaContexts[i].context;
+                        context = areaContexts[i].context;
+                        return typeof context === 'function' ? context() : context;
                     }
                 }
                 return null;
