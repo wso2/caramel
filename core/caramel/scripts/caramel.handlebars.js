@@ -1,10 +1,19 @@
 caramel.engine('handlebars', (function () {
     var renderData, partials, init, page, render, meta, partialsDir, renderJS, renderCSS,
-        pagesDir, populate, serialize, globals, theme, renderersDir, helpersDir, translate,
+        pagesDir, populate, serialize, globals, theme, renderersDir, helpersDir, translate, evalCode,
         languages = {},
         caramelData = 'X-Caramel-Data',
         log = new Log(),
         Handlebars = require('handlebars').Handlebars;
+
+    evalCode = function (code, data, theme) {
+        var template,
+            file = new File(theme.resolve.call(theme, 'code/' + code));
+        file.open('r');
+        template = Handlebars.compile(file.readAll());
+        file.close();
+        return template(data);
+    };
 
     /**
      * Registers  'include' handler for area inclusion within handlebars templates.
@@ -116,7 +125,7 @@ caramel.engine('handlebars', (function () {
      * {{code .}}
      */
     Handlebars.registerHelper('code', function () {
-        var i, file, template, length,
+        var i, length,
             html = '',
             theme = caramel.theme(),
             meta = caramel.meta(),
@@ -129,11 +138,7 @@ caramel.engine('handlebars', (function () {
             return html;
         }
         for (i = 0; i < length; i++) {
-            file = new File(theme.resolve('code/' + codes[i]));
-            file.open('r');
-            template = Handlebars.compile(file.readAll());
-            file.close();
-            html += template(meta.data);
+            html += evalCode(codes[i], meta.data, theme);
         }
         return new Handlebars.SafeString(html);
     });
@@ -316,6 +321,7 @@ caramel.engine('handlebars', (function () {
     theme = function (page, contexts, js, css, code) {
         var file, template, path, area, blocks, helper, length, i, o, areas, block,
             areaContexts, data, areaData, find, blockData,
+            theme = caramel.theme(),
             meta = caramel.meta(),
             xcd = meta.request.getHeader(caramelData);
         js = js || [];
@@ -335,11 +341,7 @@ caramel.engine('handlebars', (function () {
                 return null;
             };
             data = {
-                _: {
-                    js: js,
-                    css: css,
-                    code: code
-                }
+                _: {}
             };
             areas = parse(xcd);
             for (area in areas) {
@@ -351,15 +353,18 @@ caramel.engine('handlebars', (function () {
                         length = blocks.length;
                         for (i = 0; i < length; i++) {
                             block = blocks[i];
-                            blockData = (areaData[block] = find(areaContexts, block));
-                            path = caramel.theme().resolve(helpersDir + '/' + block + '.js');
+                            blockData = (areaData[block] = {
+                                resources: {}
+                            });
+                            blockData.context = find(areaContexts, block);
+                            path = theme.resolve.call(theme, helpersDir + '/' + block + '.js');
                             if (new File(path).isExists()) {
                                 helper = require(path);
                                 if (helper.resources) {
                                     o = helper.resources(page, meta);
-                                    blockData.js = o.js;
-                                    blockData.css = o.css;
-                                    blockData.code = o.code;
+                                    blockData.resources.js = o.js;
+                                    blockData.resources.css = o.css;
+                                    blockData.resources.code = o.code ? evalCode(o.code, meta.data, theme) : null;
                                 }
                             }
                         }
@@ -368,6 +373,9 @@ caramel.engine('handlebars', (function () {
                     }
                 }
             }
+            data._.js = js;
+            data._.css = css;
+            data._.code = code;
             meta.response.addHeader('Content-Type', 'application/json');
             print(data);
             return;

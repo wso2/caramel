@@ -1,6 +1,11 @@
 (function (Handlebars) {
 
-    var caramelData = 'X-Caramel-Data';
+    var caramelData = 'X-Caramel-Data',
+        resources = {
+            js: {},
+            css: {},
+            code: {}
+        };
 
     /**
      * {{#itr context}}key : {{key}} value : {{value}}{{/itr}}
@@ -95,20 +100,8 @@
     caramel.unloaded = {};
 
     caramel.data = function (areas, options) {
-        var err = options.error,
-            success = options.success,
-            headers = options.headers || (options.headers = {});
+        var headers = options.headers || (options.headers = {});
         options.dataType = 'json';
-/*        options.success = function (data, status, xhr) {
-            success(null, data);
-        };
-        options.error = function (xhr, status, error) {
-            err({
-                xhr: xhr,
-                status: status,
-                error: error
-            });
-        };*/
         headers[caramelData] = JSON.stringify(areas);
         $.ajax(options);
     };
@@ -143,6 +136,64 @@
         async.parallel(fns, function (err, results) {
             err ? callback(err) : caramel.render(template, context, callback);
         });
+    };
+
+    caramel.css = function (el, css, id) {
+        var i, length;
+        if (id && resources.css[id]) {
+            return;
+        } else {
+            resources.css[id] = true;
+        }
+        if (css instanceof Array) {
+            length = css.length;
+            for (i = 0; i < length; i++) {
+                el.append('<link rel="stylesheet" type="text/css" href="' + caramel.url('/themes/' + caramel.themer + '/css/' + css[i]) + '"/>');
+            }
+        } else {
+            el.append('<link rel="stylesheet" type="text/css" href="' + caramel.url('/themes/' + caramel.themer + '/css/' + css) + '"/>');
+        }
+    };
+
+    caramel.js = function (el, js, id, callback) {
+        var i, counter, length;
+        if (id && resources.js[id]) {
+            callback();
+            return;
+        } else {
+            resources.js[id] = true;
+        }
+        if (js instanceof Array) {
+            length = js.length;
+            counter = length;
+            for (i = 0; i < length; i++) {
+                $.getScript(caramel.url('/themes/' + caramel.themer + '/js/' + js[i]), function () {
+                    if (--counter > 0) {
+                        return;
+                    }
+                    callback();
+                });
+            }
+        } else {
+            $.getScript(caramel.url('/themes/' + caramel.themer + '/js/' + js), callback);
+        }
+    };
+
+    caramel.code = function (el, code, id) {
+        var i, length;
+        if (id && resources.code[id]) {
+            return;
+        } else {
+            resources.code[id] = true;
+        }
+        if (code instanceof Array) {
+            length = code.length;
+            for (i = 0; i < length; i++) {
+                el.append(code[i]);
+            }
+        } else {
+            el.append(code);
+        }
     };
 
     var invoke = Handlebars.VM.invokePartial;
