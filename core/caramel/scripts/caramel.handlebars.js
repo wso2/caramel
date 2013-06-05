@@ -144,7 +144,7 @@ caramel.engine('handlebars', (function () {
     });
 
     /**
-     * Registers  'url' handler for resolving theme files.
+     * Registers  'url' handler for resolving webapp files.
      * {{url "js/jquery-lates.js"}}
      */
     Handlebars.registerHelper('url', function (path) {
@@ -152,6 +152,17 @@ caramel.engine('handlebars', (function () {
             return path;
         }
         return caramel.url(path);
+    });
+
+    /**
+     * Registers  'themeUrl' handler for resolving theme files.
+     * {{themeUrl "js/jquery-lates.js"}}
+     */
+    Handlebars.registerHelper('themeUrl', function (path) {
+        if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) {
+            return path;
+        }
+        return caramel.themeUrl(path);
     });
 
     /**

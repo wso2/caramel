@@ -1,6 +1,6 @@
 var caramel = caramel || (function () {
     var load, Theme, theme, Engine, engine, meta, render,
-        configs, context, url, build, parseRequest, translate, languagesDir, themesDir,
+        configs, context, url, themeUrl, build, parseRequest, translate, languagesDir, themesDir,
         languages = {},
         log = new Log(),
         themes = {},
@@ -260,6 +260,17 @@ var caramel = caramel || (function () {
         return (context !== '/' ? context : '') + path;
     };
 
+
+    /**
+     * Resolves absolute paths by adding theme prefix.
+     * @param path
+     * @return {*}
+     */
+    themeUrl = function (path) {
+        context = context || configs().context;
+        return (context !== '/' ? context : '') + themesDir + '/' + configs().themer() + path;
+    };
+
     parseRequest = function (req) {
         return {
             method: req.getMethod(),
@@ -297,6 +308,7 @@ var caramel = caramel || (function () {
         render: render,
         configs: configs,
         url: url,
+        themeUrl: themeUrl,
         build: build,
         translate: translate
     };
