@@ -1,4 +1,4 @@
-var caramel = caramel || (function () {
+var caramel = (function () {
     var load, Theme, theme, Engine, engine, meta, render,
         configs, context, url, themeUrl, build, parseRequest, translate, languagesDir, themesDir,
         languages = {},
@@ -247,7 +247,7 @@ var caramel = caramel || (function () {
      * @return {*}
      */
     meta = function (meta) {
-        return meta ? (__caramel_page_metadata__ = meta) : __caramel_page_metadata__;
+        return meta ? (request.__caramel_page_metadata__ = meta) : request.__caramel_page_metadata__;
     };
 
     /**

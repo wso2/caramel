@@ -1,4 +1,4 @@
-var Caramel = Caramel || ( function () {
+var Caramel = ( function () {
 
     var modules = {};
 
