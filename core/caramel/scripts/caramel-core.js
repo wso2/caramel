@@ -1,6 +1,7 @@
-var caramel = (function () {
-    var load, Theme, theme, Engine, engine, meta, render,
-        configs, context, url, themeUrl, build, parseRequest, translate, languagesDir, themesDir,
+var meta, theme, engine, render, configs, url, themeUrl, build, translate;
+
+(function () {
+    var load, Theme, Engine, context, parseRequest, languagesDir, themesDir,
         languages = {},
         log = new Log(),
         themes = {},
@@ -299,17 +300,5 @@ var caramel = (function () {
             }
         }
         return language[text];
-    };
-
-    return {
-        meta: meta,
-        theme: theme,
-        engine: engine,
-        render: render,
-        configs: configs,
-        url: url,
-        themeUrl: themeUrl,
-        build: build,
-        translate: translate
     };
 })();
