@@ -427,7 +427,7 @@ engine('handlebars', (function () {
     };
 
     renderJS = function (js, inline) {
-        return '<script type="application/javascript"' + (inline ? '>' + js : ' src="' + js + '">') + '</script>';
+        return '<script' + (inline ? '>' + js : ' src="' + js + '">') + '</script>';
     };
 
     renderCSS = function (css) {
