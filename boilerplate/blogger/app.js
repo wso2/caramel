@@ -1,4 +1,4 @@
-var caramel = require('caramel').caramel;
+var caramel = require('caramel');
 
 caramel.configs({
     context: '/htmlBlogAggregator',
