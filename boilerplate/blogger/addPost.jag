@@ -1,6 +1,6 @@
 <%
 var caramel;
-	caramel = require('caramel').caramel;
+	caramel = require('caramel');
 	caramel.render({
 		'title': {text :'Blog Aggregator | Add Post'},
 	});
