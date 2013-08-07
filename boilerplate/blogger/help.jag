@@ -8,7 +8,7 @@ var path = "content/pages/help.html";
 	body = helpFile.readAll();
 	helpFile.close();
 
-	caramel = require('caramel').caramel;
+	caramel = require('caramel');
 	caramel.render({
 		'title': {text :'Blog Aggregator | Help'},
 		'body': {text : body}
