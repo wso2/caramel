@@ -209,6 +209,89 @@ engine('handlebars', (function () {
         return html;
     });
 
+    /*
+     The snoop helper allows a query to be executed on objects stored inside
+     an array.
+     Usage: {{{snoop 'field(query=value).value' context}}}
+     */
+    Handlebars.registerHelper('snoop',function(path,objectInstance){
+
+
+        function checkIfQuery(str){
+            return(((str.indexOf('('))!=-1)&&(str.indexOf(')')!=-1))?true:false;
+        }
+
+
+        function rec(loc,object){
+
+            //Determine if the path can be broken down
+            var components=loc.split('.');
+
+            if(object==null){
+                return '';
+            }
+            else if(components.length==1){
+                //Check if the current string is a key to the object
+                return object[loc]||'';
+            }
+            else{
+                //Remove the current key from the string
+                var currentStrIndex=loc.indexOf(components[0]);
+                var currentStrLength=components[0].length;
+                var currentStr=loc.substring(currentStrIndex,currentStrLength);
+                var nextStr=loc.replace(currentStr+'.','');
+
+                var currentObj=object[currentStr];
+
+                //Determine if the current is a query
+                if(checkIfQuery(components[0])){
+
+                    //Remove (   )
+                    var indexStart=components[0].indexOf('(');
+                    var indexEnd=components[0].indexOf(')');
+
+                    var expression=components[0].substring(indexStart,indexEnd);
+                    var operand=components[0].substring(0,indexStart);
+
+                    currentObj=object[operand];
+
+                    var removed=expression.replace('(','');
+                    removed=removed.replace(')','');
+
+                    //Obtain the key
+                    var kv=removed.split('=');
+
+                    if(kv.length==0){
+                        return '';
+                    }
+
+                    //Obtain the value
+                    var key=kv[0];
+                    var value=kv[1];
+
+                    var stop=false;
+                    //Locate the object
+                    for (var index=0;((index<currentObj.length)&&(!stop));index++) {
+                        var item=currentObj[index];
+
+                        if(item[key]==value){
+
+                            currentObj=item;
+                            stop=true;
+                        }
+                    }
+
+                }
+
+                return rec(nextStr,currentObj);
+
+            }
+        }
+
+        return  rec(path,objectInstance);
+    });
+
+
     meta = function (theme) {
         var code, g,
             meta = caramel.meta(),
