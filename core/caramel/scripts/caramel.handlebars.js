@@ -155,6 +155,13 @@ engine('handlebars', (function () {
     });
 
     /**
+     * Serialize the current content to the out put
+     */
+    Handlebars.registerHelper('dump', function (o) {
+        return stringify(o);
+    });
+
+    /**
      * Registers  'themeUrl' handler for resolving theme files.
      * {{themeUrl "js/jquery-lates.js"}}
      */
