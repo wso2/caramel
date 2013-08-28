@@ -336,6 +336,26 @@ engine('handlebars', (function () {
         return  rec(path,objectInstance);
     });
 
+    /**
+     *  Registers mergeContext handler which merge different contexts that needs to be passed in to a single partial.
+     *
+     * {{#mergeContext thisContext=this nameContext=../../name townContext=../town}}
+     *      {{>child-partial}}
+     * {{/mergeContext}}
+     *
+     * In the child-partial
+     * {{nameContext.username}}
+     *
+     */
+    Handlebars.registerHelper('mergeContext', function(options) {
+        var context = {},
+            mergeContext = function(obj) {
+                for(var k in obj)context[k]=obj[k];
+            };
+        mergeContext(options.hash);
+        return options.fn(context);
+    });
+
 
     meta = function (theme) {
         var code, g,
