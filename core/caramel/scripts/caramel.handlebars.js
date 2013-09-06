@@ -220,120 +220,120 @@ engine('handlebars', (function () {
      The snoop helper allows a query to be executed on objects stored inside
      an array.
      Usage: {{{snoop 'target(key=value).property' context}}}
-	The target should be an array containing objects.
+     The target should be an array containing objects.
      The function works by recursively parsing a path expression
      */
-    Handlebars.registerHelper('snoop',function(path,objectInstance){
+    Handlebars.registerHelper('snoop', function (path, objectInstance) {
 
-	
-	/*
-	Checks if the provided string is in the form of a query
-	A query should be of the form (field=value)
-	@str: The string expression that must be validated
-	@return: True if the string is an expression.
-	*/
-        function checkIfQuery(str){
-            return(((str.indexOf('('))!=-1)&&(str.indexOf(')')!=-1))?true:false;
+
+        /*
+         Checks if the provided string is in the form of a query
+         A query should be of the form (field=value)
+         @str: The string expression that must be validated
+         @return: True if the string is an expression.
+         */
+        function checkIfQuery(str) {
+            return(((str.indexOf('(')) != -1) && (str.indexOf(')') != -1)) ? true : false;
         }
 
 
-	/*
-	The function travels recursively processing the object properties
-	@loc: A path expression 
-	@object:The object in which the path occurs
-	*/
-        function rec(loc,object){
+        /*
+         The function travels recursively processing the object properties
+         @loc: A path expression
+         @object:The object in which the path occurs
+         */
+        function rec(loc, object) {
 
             //Determine if the path can be broken down
-            var components=loc.split('.');
+            var components = loc.split('.');
 
             //Stop traversal if the object is empty
-            if(object==null){
+            if (object == null) {
                 return '';
             }
-            else if(components.length==1){
+            else if (components.length == 1) {
                 //Check if the current string is a key to the object
-                return object[loc]||'';
+                return object[loc] || '';
             }
-            else{
+            else {
 
-		/*Given a string path like: A(key=value).B.C
-		component[0]=A(key=value)
-		component[1]=B
-		component[2]=C
-		*/
+                /*Given a string path like: A(key=value).B.C
+                 component[0]=A(key=value)
+                 component[1]=B
+                 component[2]=C
+                 */
 
                 //Get the starting point of A
-                var currentStrIndex=loc.indexOf(components[0]);
-		//Get the length of A
-                var currentStrLength=components[0].length;
-		//Extract just A from the string path A.B.C
-                var currentStr=loc.substring(currentStrIndex,currentStrLength);
-		
-		//Remove A. so that the string is B.C
-                var nextStr=loc.replace(currentStr+'.','');
+                var currentStrIndex = loc.indexOf(components[0]);
+                //Get the length of A
+                var currentStrLength = components[0].length;
+                //Extract just A from the string path A.B.C
+                var currentStr = loc.substring(currentStrIndex, currentStrLength);
 
-		//Get the property object[A] which should ideally return an object.
-		//Note: This will evaluate to null if path is not found.e.g. The currentStr
-		//is a query like A(key=value)
-                var currentObj=object[currentStr];
+                //Remove A. so that the string is B.C
+                var nextStr = loc.replace(currentStr + '.', '');
+
+                //Get the property object[A] which should ideally return an object.
+                //Note: This will evaluate to null if path is not found.e.g. The currentStr
+                //is a query like A(key=value)
+                var currentObj = object[currentStr];
 
                 //Determine if the currentStr (e.g. A ) is a query
-                if(checkIfQuery(components[0])){
+                if (checkIfQuery(components[0])) {
 
                     //Remove (   )
-                    var indexStart=components[0].indexOf('(');
-                    var indexEnd=components[0].indexOf(')');
-		
-		    //Extract the query expression (key=value)
-                    var expression=components[0].substring(indexStart,indexEnd);
-		
-		    //Extract key 
-                    var operand=components[0].substring(0,indexStart);
+                    var indexStart = components[0].indexOf('(');
+                    var indexEnd = components[0].indexOf(')');
 
-		    //Get the object at property A
-                    currentObj=object[operand];
-		    
-		    //Get rid of the brackets in the (key=value)
-                    var removed=expression.replace('(','');
-                    removed=removed.replace(')','');
+                    //Extract the query expression (key=value)
+                    var expression = components[0].substring(indexStart, indexEnd);
+
+                    //Extract key
+                    var operand = components[0].substring(0, indexStart);
+
+                    //Get the object at property A
+                    currentObj = object[operand];
+
+                    //Get rid of the brackets in the (key=value)
+                    var removed = expression.replace('(', '');
+                    removed = removed.replace(')', '');
 
                     //Obtain the key and value pair
-                    var kv=removed.split('=');
+                    var kv = removed.split('=');
 
-		    //If the key value pair is malformed we stop the search
-                    if(kv.length==0){
+                    //If the key value pair is malformed we stop the search
+                    if (kv.length == 0) {
                         return '';
                     }
 
                     //Obtain the value
-                    var key=kv[0];
-                    var value=kv[1];
+                    var key = kv[0];
+                    var value = kv[1];
 
-                    var stop=false;
+                    var stop = false;
 
                     //Go through all items in the array(Assumption)
-                    for (var index=0;((index<currentObj.length)&&(!stop));index++) {
-			
-			//Check the property by the key
-                        var item=currentObj[index];
+                    for (var index = 0; ((index < currentObj.length) && (!stop)); index++) {
 
-			//Compare the key to the value 
-                        if(item[key]==value){
+                        //Check the property by the key
+                        var item = currentObj[index];
 
-                            currentObj=item;
-                            stop=true;	//Short circuit the search
+                        //Compare the key to the value
+                        if (item[key] == value) {
+
+                            currentObj = item;
+                            stop = true;	//Short circuit the search
                         }
                     }
 
                 }
 
-                return rec(nextStr,currentObj);
+                return rec(nextStr, currentObj);
 
             }
         }
 
-        return  rec(path,objectInstance);
+        return  rec(path, objectInstance);
     });
 
     /**
@@ -347,10 +347,10 @@ engine('handlebars', (function () {
      * {{nameContext.username}}
      *
      */
-    Handlebars.registerHelper('mergeContext', function(options) {
+    Handlebars.registerHelper('mergeContext', function (options) {
         var context = {},
-            mergeContext = function(obj) {
-                for(var k in obj)context[k]=obj[k];
+            mergeContext = function (obj) {
+                for (var k in obj)context[k] = obj[k];
             };
         mergeContext(options.hash);
         return options.fn(context);
@@ -479,7 +479,7 @@ engine('handlebars', (function () {
      */
     theme = function (page, contexts, js, css, code) {
         var file, template, path, area, blocks, helper, length, i, o, areas, block,
-            areaContexts, data, areaData, find, blockData,
+            areaContexts, data, areaData, find, blockData, resolve, partials, findPartials, analyzePartials,
             theme = caramel.theme(),
             meta = caramel.meta(),
             xcd = meta.request.getHeader(caramelData);
@@ -499,8 +499,56 @@ engine('handlebars', (function () {
                 }
                 return null;
             };
+            resolve = function (parent, paths) {
+                if (paths instanceof Array) {
+                    var p = [];
+                    paths.forEach(function (path) {
+                        p.push(theme.resolve.call(theme, parent + '/' + path));
+                    });
+                    return p;
+                }
+                return theme.resolve.call(theme, parent + '/' + paths);
+            };
+            analyzePartials = function (partials, ast) {
+                switch (ast.type) {
+                    case 'program':
+                        if (ast.statements) {
+                            ast.statements.forEach(function (program) {
+                                analyzePartials(partials, program);
+                            });
+                        }
+                        if (ast.inverse) {
+                            analyzePartials(partials, ast.inverse);
+                        }
+                        break;
+                    case 'block':
+                        analyzePartials(partials, ast.program);
+                        break;
+                    case 'partial':
+                        partials.push(ast.id.original);
+                }
+            };
+            findPartials = function (partials, partial) {
+                var file, o, ast, path;
+                if (partials[partial]) {
+                    return;
+                }
+                path = resolve('partials', partial + '.hbs');
+                file = new File(path);
+                file.open('r');
+                ast = Handlebars.parse(file.readAll());
+                file.close();
+                partials[partial] = path;
+                o = [];
+                analyzePartials(o, ast);
+                o.forEach(function (partial) {
+                    findPartials(partials, partial);
+                });
+            };
             data = {
-                _: {}
+                _: {
+                    partials: {}
+                }
             };
             areas = parse(xcd);
             for (area in areas) {
@@ -515,14 +563,15 @@ engine('handlebars', (function () {
                             blockData = (areaData[block] = {
                                 resources: {}
                             });
+                            findPartials(data._.partials, block);
                             blockData.context = find(areaContexts, block);
                             path = theme.resolve.call(theme, helpersDir + '/' + block + '.js');
                             if (new File(path).isExists()) {
                                 helper = require(path);
                                 if (helper.resources) {
                                     o = helper.resources(page, meta);
-                                    blockData.resources.js = o.js;
-                                    blockData.resources.css = o.css;
+                                    blockData.resources.js = resolve('js', o.js);
+                                    blockData.resources.css = resolve('css', o.css);
                                     blockData.resources.code = o.code ? evalCode(o.code, meta.data, theme) : null;
                                 }
                             }
