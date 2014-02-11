@@ -21,15 +21,14 @@
 
     <parent>
         <groupId>caramel</groupId>
-    	<artifactId>caramel.parent</artifactId>
-    	<version>2.0.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <artifactId>caramel-parent</artifactId>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>caramel.feature</artifactId>
     <packaging>pom</packaging>
-    <name>Caramel Feature</name>
+    <name>caramel Module - Feature</name>
 
     <build>
         <plugins>
@@ -38,7 +37,7 @@
                 <version>${maven-resources-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>prefilter-resources</id>
+                        <id>copy-p2.inf</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -52,11 +51,20 @@
                                         <include>p2.inf</include>
                                     </includes>
                                 </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-module-source</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>src/main/resources/module</outputDirectory>
+                            <resources>
                                 <resource>
-                                    <directory>../../</directory>
-                                    <includes>
-                                        <include>core/**</include>
-                                    </includes>
+                                    <directory>../module</directory>
                                 </resource>
                             </resources>
                         </configuration>
@@ -66,7 +74,7 @@
             <plugin>
                 <groupId>org.wso2.maven</groupId>
                 <artifactId>carbon-p2-plugin</artifactId>
-		<version>${carbon.p2.plugin.version}</version>
+                <version>${carbon.p2.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>p2-feature-generation</id>
@@ -77,11 +85,15 @@
                         <configuration>
                             <id>caramel</id>
                             <propertiesFile>etc/feature.properties</propertiesFile>
+                            <importFeatures>
+                                <importFeatureDef>handlebars:${handlebars.version}</importFeatureDef>
+                                <importFeatureDef>markdown:${markdown.version}</importFeatureDef>
+                            </importFeatures>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-	    <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
@@ -104,8 +116,10 @@
         </plugins>
     </build>
     <properties>
-	<carbon.p2.plugin.version>1.5</carbon.p2.plugin.version>
-	<maven-resources-plugin.version>2.5</maven-resources-plugin.version>
+        <carbon.p2.plugin.version>1.5</carbon.p2.plugin.version>
+        <maven-resources-plugin.version>2.5</maven-resources-plugin.version>
+        <handlebars.version>1.0.0-SNAPSHOT</handlebars.version>
+        <markdown.version>1.0.0-SNAPSHOT</markdown.version>
     </properties>
 
     <pluginRepositories>
@@ -113,6 +127,5 @@
             <id>wso2-maven2-repository-1</id>
             <url>http://dist.wso2.org/maven2</url>
         </pluginRepository>
-
     </pluginRepositories>
 </project>
