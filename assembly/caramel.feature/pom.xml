@@ -22,7 +22,7 @@
     <parent>
         <groupId>caramel</groupId>
     	<artifactId>caramel.parent</artifactId>
-    	<version>1.0.0-SNAPSHOT</version>
+    	<version>0.9.0</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
