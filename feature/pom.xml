@@ -115,17 +115,5 @@
             </plugin>
         </plugins>
     </build>
-    <properties>
-        <carbon.p2.plugin.version>1.5</carbon.p2.plugin.version>
-        <maven-resources-plugin.version>2.5</maven-resources-plugin.version>
-        <handlebars.version>1.0.0-SNAPSHOT</handlebars.version>
-        <markdown.version>1.0.0-SNAPSHOT</markdown.version>
-    </properties>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>wso2-maven2-repository-1</id>
-            <url>http://dist.wso2.org/maven2</url>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
